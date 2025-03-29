@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Starship Setup</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+    <div id="setup" style="display:none;">
+        <h1>Choose Station</h1>
+        <button id="nav-btn" onclick="claimStation('navigation')">Navigation</button>
+        <button id="eng-btn" onclick="claimStation('engineering')">Engineering</button>
+        <div id="status">Waiting...</div>
+    </div>
+    <div id="station-ui" style="display:none;">
+        <h2 id="station-name"></h2>
+        <div id="options"></div>
+        <div id="statuses"></div>
+        <div id="connection-status">Connecting...</div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://192.168.86.69:8080');
+        let myStation = localStorage.getItem('myStation');
+        let conn;
+        let myPeer;
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            if (myStation) restoreSession();
+            else document.getElementById('setup').style.display = 'block';
+        };
+        socket.onerror = (err) => console.log('WebSocket error: ' + err);
+        socket.onclose = () => {
+            console.log('WebSocket closed');
+            document.getElementById('connection-status').innerText = 'Disconnected - Reconnecting...';
+            setTimeout(connectWebSocket, 1000); // Retry after 1 second
+        };
+
+        function connectWebSocket() {
+            const newSocket = new WebSocket('ws://192.168.86.69:8080');
+            newSocket.onopen = socket.onopen;
+            newSocket.onerror = socket.onerror;
+            newSocket.onclose = socket.onclose;
+            newSocket.onmessage = socket.onmessage;
+            socket = newSocket;
+        }
+
+        function claimStation(station) {
+            myStation = station;
+            localStorage.setItem('myStation', myStation);
+            console.log('Claiming ' + station);
+            socket.send(JSON.stringify({ type: 'claim', station }));
+            document.getElementById('status').innerText = `Claimed ${station}, waiting for other station...`;
+            document.getElementById('nav-btn').disabled = true;
+            document.getElementById('eng-btn').disabled = true;
+
+            setupPeerJS();
+        }
+
+        function restoreSession() {
+            console.log('Restoring session for ' + myStation);
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('station-ui').style.display = 'block';
+            document.getElementById('station-name').innerText = myStation;
+            setupPeerJS();
+            socket.send(JSON.stringify({ type: 'restore', station: myStation }));
+        }
+
+        function setupPeerJS() {
+            myPeer = new Peer();
+            myPeer.on('open', (id) => {
+                console.log('My Peer ID: ' + id);
+                socket.send(JSON.stringify({ type: 'peerId', peerId: id, station: myStation }));
+            });
+            myPeer.on('error', (err) => console.log('PeerJS error: ' + err));
+            myPeer.on('close', () => {
+                console.log('PeerJS closed');
+                document.getElementById('connection-status').innerText = 'Disconnected - Reconnecting...';
+                setupPeerJS(); // Reinitialize PeerJS
+            });
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'setup') {
+                console.log('Received setup data: ' + JSON.stringify(data));
+                myStation = data.station;
+                localStorage.setItem('myStation', myStation);
+                const targetPeerId = data.targetPeerId;
+
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('station-ui').style.display = 'block';
+                document.getElementById('station-name').innerText = myStation;
+
+                conn = myPeer.connect(targetPeerId);
+                conn.on('open', () => {
+                    console.log('Outgoing connection opened to ' + targetPeerId);
+                    document.getElementById('connection-status').innerText = 'Connected';
+                });
+                conn.on('data', (data) => {
+                    console.log('Received via outgoing connection: ' + JSON.stringify(data));
+                    updateStatus(data);
+                });
+                conn.on('error', (err) => console.log('Outgoing connection error: ' + err));
+                conn.on('close', () => {
+                    console.log('Outgoing connection closed');
+                    document.getElementById('connection-status').innerText = 'Disconnected - Reconnecting...';
+                });
+
+                myPeer.on('connection', (connection) => {
+                    conn = connection;
+                    conn.on('open', () => {
+                        console.log('Incoming connection opened from ' + conn.peer);
+                        document.getElementById('connection-status').innerText = 'Connected';
+                    });
+                    conn.on('data', (data) => {
+                        console.log('Received via incoming connection: ' + JSON.stringify(data));
+                        updateStatus(data);
+                    });
+                    conn.on('error', (err) => console.log('Incoming connection error: ' + err));
+                    conn.on('close', () => {
+                        console.log('Incoming connection closed');
+                        document.getElementById('connection-status').innerText = 'Disconnected - Reconnecting...';
+                    });
+                });
+
+                setupUI();
+            }
+        };
+
+        function setupUI() {
+            const optionsDiv = document.getElementById('options');
+            const statusesDiv = document.getElementById('statuses');
+            if (myStation === 'navigation') {
+                optionsDiv.innerHTML = `<button onclick="toggle('ftl')">FTL On/Off</button><button onclick="toggle('sublight')">Sublight On/Off</button>`;
+                statusesDiv.innerHTML = `FTL Engine: <span id="ftl-engine">${localStorage.getItem('ftl-engine') || 'N/A'}</span><br>Sublight Engine: <span id="sublight-engine">${localStorage.getItem('sublight-engine') || 'N/A'}</span>`;
+            } else if (myStation === 'engineering') {
+                optionsDiv.innerHTML = `<button onclick="toggle('ftl-engine')">FTL Engine On/Off</button><button onclick="toggle('sublight-engine')">Sublight Engine On/Off</button>`;
+                statusesDiv.innerHTML = `FTL: <span id="ftl">${localStorage.getItem('ftl') || 'N/A'}</span><br>Sublight: <span id="sublight">${localStorage.getItem('sublight') || 'N/A'}</span>`;
+            }
+        }
+
+        function toggle(key) {
+            let state = localStorage.getItem(key) === 'on' ? 'off' : 'on';
+            localStorage.setItem(key, state);
+            console.log(`Toggled ${key} to ${state}`);
+            if (conn && conn.open) {
+                conn.send({ station: myStation, key, state });
+                console.log(`Sent: ${JSON.stringify({ station: myStation, key, state })}`);
+            } else {
+                console.log('Connection not open yet, waiting...');
+            }
+        }
+
+        function updateStatus(data) {
+            if (myStation === 'navigation' && data.station === 'engineering') {
+                const element = document.getElementById(data.key);
+                if (element) {
+                    element.innerText = data.state;
+                    localStorage.setItem(data.key, data.state);
+                }
+            } else if (myStation === 'engineering' && data.station === 'navigation') {
+                const element = document.getElementById(data.key);
+                if (element) {
+                    element.innerText = data.state;
+                    localStorage.setItem(data.key, data.state);
+                }
+            }
+        }
+
+        // Prevent accidental refresh
+        window.onbeforeunload = () => {
+            return 'Are you sure you want to leave? Your station will disconnect.';
+        };
+    </script>
+</body>
+</html>
