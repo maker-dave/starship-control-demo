@@ -42,30 +42,31 @@ NPM_VERSION=$(npm -v)
 echo "Node.js version: $NODE_VERSION"
 echo "npm version: $NPM_VERSION"
 
-# Step 3: Clone the repository into ~/spaceship (or update if it exists)
+# Step 3: Clone the repository into ~/spaceship (remove existing directory if present)
 if [ -d "$PROJECT_DIR" ]; then
-    echo "Project directory $PROJECT_DIR already exists. Updating repository..."
-    cd "$PROJECT_DIR"
-    git pull origin main
-else
-    echo "Cloning repository from $REPO_URL into $PROJECT_DIR..."
-    git clone "$REPO_URL" "$PROJECT_DIR"
-    cd "$PROJECT_DIR"
+    echo "Project directory $PROJECT_DIR already exists."
+    echo "Removing existing directory to ensure a clean installation..."
+    rm -rf "$PROJECT_DIR"
 fi
+
+echo "Cloning repository from $REPO_URL into $PROJECT_DIR..."
+git clone "$REPO_URL" "$PROJECT_DIR"
+cd "$PROJECT_DIR"
 
 # Step 4: Install Node.js dependencies
 echo "Installing Node.js dependencies..."
 npm install ws express
 
-# Step 5: Create public directory and move HTML files from lib/ to public/
+# Step 5: Create public directory and move HTML files and server.js from lib/
 echo "Setting up public directory for HTML files..."
 if [ ! -d "$PROJECT_DIR/public" ]; then
     echo "Creating $PROJECT_DIR/public..."
     mkdir "$PROJECT_DIR/public"
 fi
 
-# Check if lib/ directory exists and move HTML files to public/
+# Check if lib/ directory exists and move files
 if [ -d "$PROJECT_DIR/lib" ]; then
+    # Move HTML files to public/
     HTML_FILES=("index.html" "nav.html" "engineering.html" "world.html" "science.html")
     for file in "${HTML_FILES[@]}"; do
         if [ -f "$PROJECT_DIR/lib/$file" ]; then
@@ -75,8 +76,17 @@ if [ -d "$PROJECT_DIR/lib" ]; then
             echo "Warning: $file not found in $PROJECT_DIR/lib/. Ensure it's present."
         fi
     done
+
+    # Move server.js to root
+    if [ -f "$PROJECT_DIR/lib/server.js" ]; then
+        mv "$PROJECT_DIR/lib/server.js" "$PROJECT_DIR/server.js"
+        echo "Moved server.js from $PROJECT_DIR/lib/ to $PROJECT_DIR/"
+    else
+        echo "Error: server.js not found in $PROJECT_DIR/lib/. Installation cannot proceed."
+        exit 1
+    fi
 else
-    echo "Error: $PROJECT_DIR/lib/ directory not found. Ensure the repository includes a lib/ directory with HTML files."
+    echo "Error: $PROJECT_DIR/lib/ directory not found. Ensure the repository includes a lib/ directory with HTML files and server.js."
     exit 1
 fi
 
