@@ -1,59 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Navigation Station</title>
+    <title>Starship Setup</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
         .panel { text-align: center; padding: 20px; }
-        canvas { border: 1px solid #ccc; background: #000; }
-        input[type="range"], input[type="number"] { width: 200px; margin: 10px; }
-        .controls { display: flex; justify-content: center; gap: 20px; }
     </style>
 </head>
 <body>
     <div class="panel">
-        <h1>Navigation Station</h1>
-        <canvas id="navMap" width="600" height="400"></canvas>
-        <div class="controls">
-            <div>
-                <label>Throttle (%):</label><br>
-                <input type="range" id="throttle" min="0" max="100" value="0" oninput="updateState()">
-            </div>
-            <div>
-                <label>Course (°):</label><br>
-                <input type="number" id="course" min="0" max="360" value="0" oninput="updateState()">
-            </div>
-        </div>
-        <div>Power Output: <span id="power">0</span>%</div>
-        <div>Actual Speed: <span id="speed">0</span> units</div>
-        <div>Actual Course: <span id="course-display">0</span>°</div>
-        <div id="connection-status">Connecting...</div>
+        <h1>Choose Your Station</h1>
+        <button onclick="claimStation('navigation')">Navigation</button>
+        <button onclick="claimStation('engineering')">Engineering</button>
+        <button onclick="claimStation('world')">World</button>
+        <div id="status">Waiting...</div>
     </div>
 
     <script>
         const socket = new WebSocket('ws://192.168.86.69:8080');
-        const params = new URLSearchParams(window.location.search);
-        const myPeerId = params.get('peerId');
-        const targetPeerId = params.get('targetPeerId');
+        let myPeer;
 
-        let myPeer = new Peer(myPeerId);
-        let conn;
-        let localState = JSON.parse(localStorage.getItem('navState')) || { throttle: 0, course: 0 };
-        let remoteState = { power: 0 };
-        let shipState = { speed: 0, course: 0 };
-        let worldState = { ship: { x: 300, y: 200 }, objects: [] };
-        let lastServerReport = 0;
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('status').innerText = 'Connected - Select a station';
+        };
 
-        const canvas = document.getElementById('navMap');
-        const ctx = canvas.getContext('2d');
-
-        myPeer.on('open', () => {
-            conn = myPeer.connect(targetPeerId);
-            conn.on('open', () => {
-                document.getElementById('connection-status').innerText = 'Connected';
-                conn.send(JSON.stringify(localState));
+        function claimStation(station) {
+            localStorage.setItem('myStation', station);
+            myPeer = new Peer();
+            myPeer.on('open', (id) => {
+                socket.send(JSON.stringify({ type: 'claim', station, peerId: id }));
+                document.getElementById('status').innerText = `Claiming ${station}...`;
             });
-            conn.on('data', (data) => {
-                const parsed = JSON.parse(data);
-                if (parsed.power) remoteState.power = parsed.power;
-                if (parsed.ship) worldState = parsed;
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'redirect') {
+                window.location.href = `${data.station}.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
+            }
+        };
+    </script>
+</body>
+</html>
