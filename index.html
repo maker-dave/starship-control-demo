@@ -3,6 +3,21 @@
 <head>
     <title>Starship Setup</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .on {
+            background-color: green;
+            color: white;
+        }
+        .off {
+            background-color: red;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <div id="setup" style="display:none;">
@@ -33,7 +48,7 @@
         socket.onclose = () => {
             console.log('WebSocket closed');
             document.getElementById('connection-status').innerText = 'Disconnected - Reconnecting...';
-            setTimeout(connectWebSocket, 1000); // Retry after 1 second
+            setTimeout(connectWebSocket, 1000);
         };
 
         function connectWebSocket() {
@@ -76,7 +91,7 @@
             myPeer.on('close', () => {
                 console.log('PeerJS closed');
                 document.getElementById('connection-status').innerText = 'Disconnected - Reconnecting...';
-                setupPeerJS(); // Reinitialize PeerJS
+                setupPeerJS();
             });
         }
 
@@ -132,11 +147,15 @@
             const optionsDiv = document.getElementById('options');
             const statusesDiv = document.getElementById('statuses');
             if (myStation === 'navigation') {
-                optionsDiv.innerHTML = `<button onclick="toggle('ftl')">FTL On/Off</button><button onclick="toggle('sublight')">Sublight On/Off</button>`;
+                optionsDiv.innerHTML = `<button id="ftl-btn" onclick="toggle('ftl')">FTL On/Off</button><button id="sublight-btn" onclick="toggle('sublight')">Sublight On/Off</button>`;
                 statusesDiv.innerHTML = `FTL Engine: <span id="ftl-engine">${localStorage.getItem('ftl-engine') || 'N/A'}</span><br>Sublight Engine: <span id="sublight-engine">${localStorage.getItem('sublight-engine') || 'N/A'}</span>`;
+                updateButtonColor('ftl');
+                updateButtonColor('sublight');
             } else if (myStation === 'engineering') {
-                optionsDiv.innerHTML = `<button onclick="toggle('ftl-engine')">FTL Engine On/Off</button><button onclick="toggle('sublight-engine')">Sublight Engine On/Off</button>`;
+                optionsDiv.innerHTML = `<button id="ftl-engine-btn" onclick="toggle('ftl-engine')">FTL Engine On/Off</button><button id="sublight-engine-btn" onclick="toggle('sublight-engine')">Sublight Engine On/Off</button>`;
                 statusesDiv.innerHTML = `FTL: <span id="ftl">${localStorage.getItem('ftl') || 'N/A'}</span><br>Sublight: <span id="sublight">${localStorage.getItem('sublight') || 'N/A'}</span>`;
+                updateButtonColor('ftl-engine');
+                updateButtonColor('sublight-engine');
             }
         }
 
@@ -144,11 +163,20 @@
             let state = localStorage.getItem(key) === 'on' ? 'off' : 'on';
             localStorage.setItem(key, state);
             console.log(`Toggled ${key} to ${state}`);
+            updateButtonColor(key);
             if (conn && conn.open) {
                 conn.send({ station: myStation, key, state });
                 console.log(`Sent: ${JSON.stringify({ station: myStation, key, state })}`);
             } else {
                 console.log('Connection not open yet, waiting...');
+            }
+        }
+
+        function updateButtonColor(key) {
+            const state = localStorage.getItem(key);
+            const button = document.getElementById(`${key}-btn`);
+            if (button) {
+                button.className = state === 'on' ? 'on' : 'off';
             }
         }
 
@@ -168,7 +196,6 @@
             }
         }
 
-        // Prevent accidental refresh
         window.onbeforeunload = () => {
             return 'Are you sure you want to leave? Your station will disconnect.';
         };
