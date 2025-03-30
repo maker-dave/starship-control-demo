@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Engineering Station</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        .panel { text-align: center; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Engineering Station</h1>
+        <input type="range" id="power" min="0" max="100" value="0" oninput="updateState()"> Power Output (%)<br>
+        <div>Throttle: <span id="throttle">0</span>%</div>
+        <div>Course: <span id="course">0</span>°</div>
+        <div>Actual Speed: <span id="speed">0</span> units</div>
+        <div id="connection-status">Connecting...</div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://192.168.86.69:8080');
+        let myPeer, conn;
+        let localState = JSON.parse(localStorage.getItem('engState')) || { power: 0 };
+        let remoteState = { throttle: 0, course: 0 };
+        let shipState = { speed: 0 }; // Engineering might calculate its own view
+
+        socket.onopen = () => {
+            setupPeerJS();
+            socket.send(JSON.stringify({ type: 'claim', station: 'engineering' }));
+        };
+
+        function setupPeerJS() {
+            myPeer = new Peer();
+            myPeer.on('open', (id) => {
+                socket.send(JSON.stringify({ type: 'peerId', peerId: id, station: 'engineering' }));
+            });
+            myPeer.on('connection', (connection) => {
+                conn = connection;
+                conn.on('open', () => {
+                    document.getElementById('connection-status').innerText = 'Connected';
+                    conn.send(JSON.stringify(localState));
+                });
+                conn.on('data', (data) => {
+                    const parsed = JSON.parse(data);
+                    if (parsed.throttle) remoteState.throttle = parsed.throttle;
+                    if (parsed.course) remoteState.course = parsed.course;
+                    calculateShipState();
+                });
+            });
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'setup' && data.station === 'engineering') {
+                conn = myPeer.connect(data.targetPeerId);
+                conn.on('open', () => {
+                    document.getElementById('connection-status').innerText = 'Connected';
+                    conn.send(JSON.stringify(localState));
+                });
+                conn.on('data', (data) => {
+                    const parsed = JSON.parse(data);
+                    if (parsed.throttle) remoteState.throttle = parsed.throttle;
+                    if (parsed.course) remoteState.course = parsed.course;
+                    calculateShipState();
+                });
+            }
+        };
+
+        function updateState() {
+            localState.power = parseInt(document.getElementById('power').value);
+            localStorage.setItem('engState', JSON.stringify(localState));
+            if (conn && conn.open) conn.send(JSON.stringify(localState));
+            calculateShipState();
+        }
+
+        function calculateShipState() {
+            const targetSpeed = Math.min(remoteState.throttle, localState.power) * 0.01;
+            shipState.speed += (targetSpeed - shipState.speed) * 0.1;
+
+            document.getElementById('throttle').innerText = remoteState.throttle;
+            document.getElementById('course').innerText = remoteState.course;
+            document.getElementById('speed').innerText = Math.round(shipState.speed * 100);
+        }
+
+        setInterval(calculateShipState, 100);
+
+        // Initial UI setup
+        document.getElementById('power').value = localState.power;
+    </script>
+</body>
+</html>
