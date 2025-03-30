@@ -132,12 +132,13 @@
             const optionsDiv = document.getElementById('options');
             const statusesDiv = document.getElementById('statuses');
             if (myStation === 'navigation') {
-                optionsDiv.innerHTML = `<button onclick="toggle('ftl')">FTL On/Off</button><button onclick="toggle('sublight')">Sublight On/Off</button>`;
-                statusesDiv.innerHTML = `FTL Engine: <span id="ftl-engine">${localStorage.getItem('ftl-engine') || 'N/A'}</span><br>Sublight Engine: <span id="sublight-engine">${localStorage.getItem('sublight-engine') || 'N/A'}</span>`;
+                optionsDiv.innerHTML = `<button id="ftl-btn" onclick="toggle('ftl')">FTL On/Off</button><button id="sublight-btn" onclick="toggle('sublight')">Sublight On/Off</button>`;
+                statusesDiv.innerHTML = `FTL Engine: <span id="ftl-engine">${localStorage.getItem('ftl-engine') || 'N/A'}</span><br>Sublight Engine: <span id="sublight-engine">${localStorage.getItem('[...]
             } else if (myStation === 'engineering') {
-                optionsDiv.innerHTML = `<button onclick="toggle('ftl-engine')">FTL Engine On/Off</button><button onclick="toggle('sublight-engine')">Sublight Engine On/Off</button>`;
+                optionsDiv.innerHTML = `<button id="ftl-engine-btn" onclick="toggle('ftl-engine')">FTL Engine On/Off</button><button id="sublight-engine-btn" onclick="toggle('sublight-engine')">Sublight Engine On/Off</button>`;
                 statusesDiv.innerHTML = `FTL: <span id="ftl">${localStorage.getItem('ftl') || 'N/A'}</span><br>Sublight: <span id="sublight">${localStorage.getItem('sublight') || 'N/A'}</span>`;
             }
+            updateButtonColors();
         }
 
         function toggle(key) {
@@ -150,22 +151,31 @@
             } else {
                 console.log('Connection not open yet, waiting...');
             }
+            updateButtonColors();
         }
 
         function updateStatus(data) {
-            if (myStation === 'navigation' && data.station === 'engineering') {
+            if (myStation === 'navigation' && data.station === 'engineering' || myStation === 'engineering' && data.station === 'navigation') {
                 const element = document.getElementById(data.key);
                 if (element) {
                     element.innerText = data.state;
                     localStorage.setItem(data.key, data.state);
                 }
-            } else if (myStation === 'engineering' && data.station === 'navigation') {
-                const element = document.getElementById(data.key);
-                if (element) {
-                    element.innerText = data.state;
-                    localStorage.setItem(data.key, data.state);
-                }
+                updateButtonColors();
             }
+        }
+
+        function updateButtonColors() {
+            const buttons = document.querySelectorAll('button[id$="-btn"]');
+            buttons.forEach(button => {
+                const key = button.id.replace('-btn', '');
+                const state = localStorage.getItem(key);
+                if (state === 'on') {
+                    button.style.backgroundColor = 'green';
+                } else {
+                    button.style.backgroundColor = 'red';
+                }
+            });
         }
 
         // Prevent accidental refresh
