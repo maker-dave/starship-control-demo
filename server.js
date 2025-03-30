@@ -21,25 +21,31 @@ wss.on('connection', (ws, req) => {
             peerIds[data.station] = data.peerId;
             console.log(`${data.station} claimed by ${clientIp}, peerId: ${data.peerId}`);
 
-            if (Object.keys(stations).length === 3) { // Wait for Nav, Eng, World
+            if (Object.keys(stations).length === 4) { // Wait for Nav, Eng, World, Science
                 const navPeerId = peerIds.navigation;
                 const engPeerId = peerIds.engineering;
                 const worldPeerId = peerIds.world;
+                const sciencePeerId = peerIds.science;
 
                 stations.navigation.ws.send(JSON.stringify({
                     type: 'redirect',
                     station: 'nav',
-                    targetPeerIds: [engPeerId, worldPeerId].join(',')
+                    targetPeerIds: [engPeerId, worldPeerId, sciencePeerId].join(',')
                 }));
                 stations.engineering.ws.send(JSON.stringify({
                     type: 'redirect',
                     station: 'engineering',
-                    targetPeerIds: [navPeerId, worldPeerId].join(',')
+                    targetPeerIds: [navPeerId, worldPeerId, sciencePeerId].join(',')
                 }));
                 stations.world.ws.send(JSON.stringify({
                     type: 'redirect',
                     station: 'world',
-                    targetPeerIds: [navPeerId, engPeerId].join(',')
+                    targetPeerIds: [navPeerId, engPeerId, sciencePeerId].join(',')
+                }));
+                stations.science.ws.send(JSON.stringify({
+                    type: 'redirect',
+                    station: 'science',
+                    targetPeerIds: [navPeerId, engPeerId, worldPeerId].join(',')
                 }));
                 console.log('Redirected all stations');
             }
