@@ -5,7 +5,6 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         .panel { text-align: center; padding: 20px; }
-        button { padding: 10px 20px; margin: 5px; }
     </style>
 </head>
 <body>
@@ -21,51 +20,42 @@
 
     <script>
         const socket = new WebSocket('ws://192.168.86.69:8080');
-        let myPeer, conn;
+        const params = new URLSearchParams(window.location.search);
+        const myPeerId = params.get('peerId');
+        const targetPeerId = params.get('targetPeerId');
+
+        let myPeer = new Peer(myPeerId);
+        let conn;
         let localState = JSON.parse(localStorage.getItem('navState')) || { throttle: 0, course: 0 };
         let remoteState = { power: 0 };
         let shipState = { speed: 0, course: 0 };
         let lastServerReport = 0;
 
-        socket.onopen = () => {
-            setupPeerJS();
-            socket.send(JSON.stringify({ type: 'claim', station: 'navigation' }));
-        };
-
-        function setupPeerJS() {
-            myPeer = new Peer();
-            myPeer.on('open', (id) => {
-                socket.send(JSON.stringify({ type: 'peerId', peerId: id, station: 'navigation' }));
+        myPeer.on('open', () => {
+            conn = myPeer.connect(targetPeerId);
+            conn.on('open', () => {
+                document.getElementById('connection-status').innerText = 'Connected';
+                conn.send(JSON.stringify(localState));
             });
-            myPeer.on('connection', (connection) => {
-                conn = connection;
-                conn.on('open', () => {
-                    document.getElementById('connection-status').innerText = 'Connected';
-                    conn.send(JSON.stringify(localState));
-                });
-                conn.on('data', (data) => {
-                    const parsed = JSON.parse(data);
-                    if (parsed.power) remoteState.power = parsed.power;
-                    calculateShipState();
-                });
+            conn.on('data', (data) => {
+                const parsed = JSON.parse(data);
+                if (parsed.power) remoteState.power = parsed.power;
+                calculateShipState();
             });
-        }
+        });
 
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'setup' && data.station === 'navigation') {
-                conn = myPeer.connect(data.targetPeerId);
-                conn.on('open', () => {
-                    document.getElementById('connection-status').innerText = 'Connected';
-                    conn.send(JSON.stringify(localState));
-                });
-                conn.on('data', (data) => {
-                    const parsed = JSON.parse(data);
-                    if (parsed.power) remoteState.power = parsed.power;
-                    calculateShipState();
-                });
-            }
-        };
+        myPeer.on('connection', (connection) => {
+            conn = connection;
+            conn.on('open', () => {
+                document.getElementById('connection-status').innerText = 'Connected';
+                conn.send(JSON.stringify(localState));
+            });
+            conn.on('data', (data) => {
+                const parsed = JSON.parse(data);
+                if (parsed.power) remoteState.power = parsed.power;
+                calculateShipState();
+            });
+        });
 
         function updateState() {
             localState.throttle = parseInt(document.getElementById('throttle').value);
@@ -76,9 +66,9 @@
         }
 
         function calculateShipState() {
-            const targetSpeed = Math.min(localState.throttle, remoteState.power) * 0.01; // Simple scaling
-            shipState.speed += (targetSpeed - shipState.speed) * 0.1; // Ramp-up
-            shipState.course += (localState.course - shipState.course) * 0.05; // Slower turn
+            const targetSpeed = Math.min(localState.throttle, remoteState.power) * 0.01;
+            shipState.speed += (targetSpeed - shipState.speed) * 0.1;
+            shipState.course += (localState.course - shipState.course) * 0.05;
 
             document.getElementById('power').innerText = remoteState.power;
             document.getElementById('speed').innerText = Math.round(shipState.speed * 100);
@@ -102,7 +92,6 @@
             reportToServer();
         }, 100);
 
-        // Initial UI setup
         document.getElementById('throttle').value = localState.throttle;
         document.getElementById('course').value = localState.course;
     </script>
