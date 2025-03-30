@@ -94,7 +94,8 @@
         let radarConfig = {
             range: 300,
             fov: 90,
-            direction: 0
+            direction: 0,
+            directionSetByScience: false
         };
         let nextObjectId = 3;
         let editingObjectId = null;
@@ -108,7 +109,7 @@
                 connections.set(targetPeerId, conn);
                 conn.on('open', () => {
                     document.getElementById('connection-status').innerText = 'Connected';
-                    broadcastWorldState();
+                    conn.send(JSON.stringify({ world: worldState }));
                 });
                 conn.on('data', (data) => {
                     const parsed = JSON.parse(data);
@@ -117,7 +118,17 @@
                         worldState.ship.velocityX = parsed.speed * Math.cos(rad);
                         worldState.ship.velocityY = parsed.speed * Math.sin(rad);
                         worldState.ship.course = parsed.course;
-                        radarConfig.direction = parsed.course;
+                        if (!radarConfig.directionSetByScience) {
+                            radarConfig.direction = parsed.course;
+                        }
+                    }
+                    if (parsed.radarConfig) {
+                        radarConfig.range = parsed.radarConfig.range;
+                        radarConfig.fov = parsed.radarConfig.fov;
+                        radarConfig.direction = parsed.radarConfig.direction;
+                        radarConfig.directionSetByScience = true;
+                        document.getElementById('radarRange').value = radarConfig.range;
+                        document.getElementById('radarFOV').value = radarConfig.fov;
                     }
                 });
             });
@@ -127,7 +138,7 @@
             connections.set(connection.peer, connection);
             connection.on('open', () => {
                 document.getElementById('connection-status').innerText = 'Connected';
-                broadcastWorldState();
+                connection.send(JSON.stringify({ world: worldState }));
             });
             connection.on('data', (data) => {
                 const parsed = JSON.parse(data);
@@ -136,7 +147,17 @@
                     worldState.ship.velocityX = parsed.speed * Math.cos(rad);
                     worldState.ship.velocityY = parsed.speed * Math.sin(rad);
                     worldState.ship.course = parsed.course;
-                    radarConfig.direction = parsed.course;
+                    if (!radarConfig.directionSetByScience) {
+                        radarConfig.direction = parsed.course;
+                    }
+                }
+                if (parsed.radarConfig) {
+                    radarConfig.range = parsed.radarConfig.range;
+                    radarConfig.fov = parsed.radarConfig.fov;
+                    radarConfig.direction = parsed.radarConfig.direction;
+                    radarConfig.directionSetByScience = true;
+                    document.getElementById('radarRange').value = radarConfig.range;
+                    document.getElementById('radarFOV').value = radarConfig.fov;
                 }
             });
         });
@@ -295,6 +316,7 @@
         function updateRadarConfig() {
             radarConfig.range = parseFloat(document.getElementById('radarRange').value);
             radarConfig.fov = parseFloat(document.getElementById('radarFOV').value);
+            radarConfig.directionSetByScience = false; // Allow manual override on World
         }
 
         setInterval(() => {
