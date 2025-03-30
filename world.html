@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>World Simulation</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        .panel { text-align: center; padding: 20px; }
+        canvas { border: 1px solid #ccc; background: #000; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>World Simulation</h1>
+        <canvas id="worldMap" width="600" height="400"></canvas>
+        <div id="connection-status">Connecting...</div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://192.168.86.69:8080');
+        const params = new URLSearchParams(window.location.search);
+        const myPeerId = params.get('peerId');
+        const targetPeerId = params.get('targetPeerId');
+
+        let myPeer = new Peer(myPeerId);
+        let conn;
+        let worldState = {
+            ship: { x: 300, y: 200, speed: 0, course: 0 },
+            objects: [
+                { type: 'asteroid', x: 400, y: 300, dx: -0.5, dy: 0.2 },
+                { type: 'enemy', x: 100, y: 100, dx: 0.3, dy: -0.4 }
+            ]
+        };
+
+        const canvas = document.getElementById('worldMap');
+        const ctx = canvas.getContext('2d');
+
+        myPeer.on('open', () => {
+            conn = myPeer.connect(targetPeerId);
+            conn.on('open', () => {
+                document.getElementById('connection-status').innerText = 'Connected';
+                conn.send(JSON.stringify(worldState));
+            });
+            conn.on('data', (data) => {
+                const parsed = JSON.parse(data);
+                if (parsed.speed !== undefined) worldState.ship.speed = parsed.speed;
+                if (parsed.course !== undefined) worldState.ship.course = parsed.course;
+            });
+        });
+
+        myPeer.on('connection', (connection) => {
+            conn = connection;
+            conn.on('open', () => {
+                document.getElementById('connection-status').innerText = 'Connected';
+                conn.send(JSON.stringify(worldState));
+            });
+            conn.on('data', (data) => {
+                const parsed = JSON.parse(data);
+                if (parsed.speed !== undefined) worldState.ship.speed = parsed.speed;
+                if (parsed.course !== undefined) worldState.ship.course = parsed.course;
+            });
+        });
+
+        function updateWorld() {
+            // Update ship position based on speed and course
+            const rad = worldState.ship.course * Math.PI / 180;
+            worldState.ship.x += worldState.ship.speed * Math.cos(rad);
+            worldState.ship.y += worldState.ship.speed * Math.sin(rad);
+
+            // Update object positions
+            worldState.objects.forEach(obj => {
+                obj.x += obj.dx;
+                obj.y += obj.dy;
+                // Simple boundary wrap-around
+                if (obj.x < 0) obj.x = canvas.width;
+                if (obj.x > canvas.width) obj.x = 0;
+                if (obj.y < 0) obj.y = canvas.height;
+                if (obj.y > canvas.height) obj.y = 0;
+            });
+
+            // Broadcast world state
+            if (conn && conn.open) conn.send(JSON.stringify(worldState));
+        }
+
+        function drawWorld() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stars
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 100; i++) {
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+            }
+
+            // Draw ship
+            ctx.fillStyle = '#0f0';
+            ctx.beginPath();
+            ctx.arc(worldState.ship.x, worldState.ship.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw objects
+            worldState.objects.forEach(obj => {
+                ctx.fillStyle = obj.type === 'asteroid' ? '#888' : '#f00';
+                ctx.beginPath();
+                ctx.arc(obj.x, obj.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        setInterval(() => {
+            updateWorld();
+            drawWorld();
+        }, 100);
+    </script>
+</body>
+</html>
