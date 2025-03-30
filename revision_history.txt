@@ -59,3 +59,23 @@ Version 0.7 - Button Color Update (March 29, 2025)
   - Buttons turn green when "on" and red when "off" using CSS classes.
   - Updated toggle function to dynamically adjust button colors.
 - Status: Current version with improved UI feedback.
+
+Version 0.8 - Distributed Simulator Framework (March 30, 2025)
+
+Description: Expanded the demo into a distributed starship simulator with modular station files and server-world integration, building on PeerJS P2P and WebSocket signaling.
+Features:
+index.html as Launchpad: Station selection redirects to nav.html or engineering.html with PeerJS connection info (peer IDs) via URL parameters.
+nav.html: Navigation station with throttle (0-100%) and course (0-360°) inputs, calculates ship speed/course from local inputs and Engineering’s power output via P2P, reports speed/course to server every 5 seconds during downtime.
+engineering.html: Engineering station with power output (0-100%) input, syncs with Navigation via P2P, calculates its own speed view for display.
+server.js: Updated to redirect clients to station pages after pairing, tracks ship position (x, y) in the external world using Navigation’s updates, serves files via Express.
+Distributed Processing: Speed/course calculated client-side using P2P data, leveraging client CPUs for parallel computation.
+Local Storage: Persistent state for each station (throttle, course, power).
+Issues:
+Limited to two stations (Navigation, Engineering); needs expansion for full bridge crew.
+Basic speed calculation lacks ramp-up delays or resistance factors.
+Server-world interaction is one-way (client to server); no feedback to clients yet (e.g., asteroid proximity).
+Status: Functional prototype with distributed architecture; ready for further station additions and refinement.
+Notes on the Update
+Date: Set to March 30, 2025, since we’re working today and building on your Version 0.7 from yesterday.
+Features: Captures the split into index.html (launchpad), nav.html, and engineering.html, plus the distributed processing and server-world stuff we’ve been iterating on.
+Issues: Highlights where we’re at—two stations, simple calc, no world feedback yet—so you can see what’s next.
