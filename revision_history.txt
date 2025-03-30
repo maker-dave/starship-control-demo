@@ -51,3 +51,11 @@ Version 0.6 - Stability Enhancements (March 29, 2025)
   - Session restore from localStorage on refresh with a warning prompt.
   - Persistent status updates in localStorage and UI.
 - Status: Current working version; stable for basic use on Raspberry Pi 4.
+
+Version 0.7 - Button Color Update (March 29, 2025)
+
+- Description: Modified index.html to change button colors based on their status.
+- Features:
+  - Buttons turn green when "on" and red when "off" using CSS classes.
+  - Updated toggle function to dynamically adjust button colors.
+- Status: Current version with improved UI feedback.
