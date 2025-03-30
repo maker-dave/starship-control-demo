@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigation Station</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        .panel { text-align: center; padding: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Navigation Station</h1>
+        <input type="range" id="throttle" min="0" max="100" value="0" oninput="updateState()"> Throttle (%)<br>
+        <input type="number" id="course" min="0" max="360" value="0" oninput="updateState()"> Course (°)<br>
+        <div>Power Output: <span id="power">0</span>%</div>
+        <div>Actual Speed: <span id="speed">0</span> units</div>
+        <div>Actual Course: <span id="course-display">0</span>°</div>
+        <div id="connection-status">Connecting...</div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://192.168.86.69:8080');
+        let myPeer, conn;
+        let localState = JSON.parse(localStorage.getItem('navState')) || { throttle: 0, course: 0 };
+        let remoteState = { power: 0 };
+        let shipState = { speed: 0, course: 0 };
+        let lastServerReport = 0;
+
+        socket.onopen = () => {
+            setupPeerJS();
+            socket.send(JSON.stringify({ type: 'claim', station: 'navigation' }));
+        };
+
+        function setupPeerJS() {
+            myPeer = new Peer();
+            myPeer.on('open', (id) => {
+                socket.send(JSON.stringify({ type: 'peerId', peerId: id, station: 'navigation' }));
+            });
+            myPeer.on('connection', (connection) => {
+                conn = connection;
+                conn.on('open', () => {
+                    document.getElementById('connection-status').innerText = 'Connected';
+                    conn.send(JSON.stringify(localState));
+                });
+                conn.on('data', (data) => {
+                    const parsed = JSON.parse(data);
+                    if (parsed.power) remoteState.power = parsed.power;
+                    calculateShipState();
+                });
+            });
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'setup' && data.station === 'navigation') {
+                conn = myPeer.connect(data.targetPeerId);
+                conn.on('open', () => {
+                    document.getElementById('connection-status').innerText = 'Connected';
+                    conn.send(JSON.stringify(localState));
+                });
+                conn.on('data', (data) => {
+                    const parsed = JSON.parse(data);
+                    if (parsed.power) remoteState.power = parsed.power;
+                    calculateShipState();
+                });
+            }
+        };
+
+        function updateState() {
+            localState.throttle = parseInt(document.getElementById('throttle').value);
+            localState.course = parseInt(document.getElementById('course').value);
+            localStorage.setItem('navState', JSON.stringify(localState));
+            if (conn && conn.open) conn.send(JSON.stringify(localState));
+            calculateShipState();
+        }
+
+        function calculateShipState() {
+            const targetSpeed = Math.min(localState.throttle, remoteState.power) * 0.01; // Simple scaling
+            shipState.speed += (targetSpeed - shipState.speed) * 0.1; // Ramp-up
+            shipState.course += (localState.course - shipState.course) * 0.05; // Slower turn
+
+            document.getElementById('power').innerText = remoteState.power;
+            document.getElementById('speed').innerText = Math.round(shipState.speed * 100);
+            document.getElementById('course-display').innerText = Math.round(shipState.course);
+        }
+
+        function reportToServer() {
+            const now = Date.now();
+            if (now - lastServerReport > 5000 && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: 'shipUpdate',
+                    speed: shipState.speed,
+                    course: shipState.course
+                }));
+                lastServerReport = now;
+            }
+        }
+
+        setInterval(() => {
+            calculateShipState();
+            reportToServer();
+        }, 100);
+
+        // Initial UI setup
+        document.getElementById('throttle').value = localState.throttle;
+        document.getElementById('course').value = localState.course;
+    </script>
+</body>
+</html>
