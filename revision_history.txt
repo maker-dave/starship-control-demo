@@ -1,0 +1,53 @@
+Starship Control Demo - Version History
+
+Version 0.1 - Initial Concept (March 29, 2025)
+- Description: Defined the basic idea: an HTML5 app served by Apache 2 on a Raspberry Pi 4, with two stations (Navigation and Engineering) that toggle options and share statuses in real-time, stored locally via localStorage.
+- Features:
+  - Station selection (Navigation, Engineering).
+  - Navigation: Toggle FTL and Sublight, view engine statuses.
+  - Engineering: Toggle FTL and Sublight engines, view navigation statuses.
+- Status: Conceptual; no working code yet.
+
+Version 0.2 - First WebSocket Attempt (March 29, 2025)
+- Description: Introduced WebSocket for real-time communication, served alongside Apache on the Pi at ws://192.168.86.69:8080.
+- Features:
+  - Basic index.html with station selection buttons.
+  - Node.js WebSocket server (server.js) to relay messages.
+- Issues:
+  - Clients relied on server for all communication, not P2P as desired.
+  - No local storage or UI updates implemented.
+
+Version 0.3 - Peer-to-Peer with WebRTC (March 29, 2025)
+- Description: Shifted to WebRTC via PeerJS for direct client-to-client communication, reducing server dependency.
+- Features:
+  - PeerJS integration for P2P toggling.
+  - Initial IP-based connection attempt using client IPs collected by the server.
+- Issues:
+  - Automatic peer connection via IPs failed; required manual peer ID entry.
+  - UI stuck at station selection due to WebSocket issues.
+
+Version 0.4 - WebSocket Coordination (March 29, 2025)
+- Description: Used WebSocket server to coordinate PeerJS IDs automatically, eliminating manual entry.
+- Features:
+  - Server collects IPs and PeerJS IDs, sends setup data to clients.
+  - Clients connect directly via PeerJS after setup.
+- Issues:
+  - Clients stuck at "Claimed [station], waiting..." due to WebSocket closures from page reloads.
+
+Version 0.5 - Working Demo (March 29, 2025)
+- Description: Fixed WebSocket issues by avoiding page reloads, achieving a functional demo.
+- Features:
+  - Dynamic UI updates without reloading (setup/station screens).
+  - Two-way PeerJS communication: Navigation and Engineering toggle and update statuses.
+  - Local storage for toggle states.
+- Issues:
+  - No handling for disconnections (e.g., screen timeouts).
+  - Browser refreshes broke sessions.
+
+Version 0.6 - Stability Enhancements (March 29, 2025)
+- Description: Added reconnection and session persistence to handle timeouts and refreshes.
+- Features:
+  - Auto-reconnect for WebSocket and PeerJS on disconnection (e.g., screen timeout).
+  - Session restore from localStorage on refresh with a warning prompt.
+  - Persistent status updates in localStorage and UI.
+- Status: Current working version; stable for basic use on Raspberry Pi 4.
