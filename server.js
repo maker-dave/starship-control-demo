@@ -2,12 +2,11 @@ const WebSocket = require('ws');
 const express = require('express');
 const app = express();
 
-app.use(express.static('public')); // Serve index.html, nav.html, engineering.html
+app.use(express.static('public'));
 
 const wss = new WebSocket.Server({ port: 8080 });
 let stations = {};
 let peerIds = {};
-let worldState = { shipX: 0, shipY: 0 };
 
 wss.on('connection', (ws, req) => {
     const clientIp = req.socket.remoteAddress.replace('::ffff:', '');
@@ -22,28 +21,28 @@ wss.on('connection', (ws, req) => {
             peerIds[data.station] = data.peerId;
             console.log(`${data.station} claimed by ${clientIp}, peerId: ${data.peerId}`);
 
-            if (Object.keys(stations).length === 2) {
+            if (Object.keys(stations).length === 3) { // Wait for Nav, Eng, World
                 const navPeerId = peerIds.navigation;
                 const engPeerId = peerIds.engineering;
+                const worldPeerId = peerIds.world;
+
                 stations.navigation.ws.send(JSON.stringify({
                     type: 'redirect',
                     station: 'nav',
-                    targetPeerId: engPeerId
+                    targetPeerIds: [engPeerId, worldPeerId].join(',')
                 }));
                 stations.engineering.ws.send(JSON.stringify({
                     type: 'redirect',
                     station: 'engineering',
-                    targetPeerId: navPeerId
+                    targetPeerIds: [navPeerId, worldPeerId].join(',')
                 }));
-                console.log('Redirected both stations');
+                stations.world.ws.send(JSON.stringify({
+                    type: 'redirect',
+                    station: 'world',
+                    targetPeerIds: [navPeerId, engPeerId].join(',')
+                }));
+                console.log('Redirected all stations');
             }
-        }
-
-        if (data.type === 'shipUpdate') {
-            const rad = data.course * Math.PI / 180;
-            worldState.shipX += data.speed * Math.cos(rad);
-            worldState.shipY += data.speed * Math.sin(rad);
-            console.log(`Ship position: (${worldState.shipX}, ${worldState.shipY})`);
         }
     });
 
