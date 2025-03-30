@@ -21,6 +21,23 @@ A distributed starship control simulator featuring modular stations—Navigation
 - Git for cloning the repository.
 
 ## Setup Instructions
+The easiest way to set up the project is to use the provided installation script, which automates the process.
+
+### Automated Installation (Recommended)
+1. Clone the repository to a temporary location:
+   git clone https://github.com/maker-dave/starship-control-demo.git /tmp/starship-control-demo
+   cd /tmp/starship-control-demo
+
+2. Run the installation script (located in the `tools/` directory):
+   chmod +x tools/install.sh
+   ./tools/install.sh
+
+3. Access the Demo:
+   The script will install the project in `~/spaceship` and start the server. Access the demo at the URL provided by the script (e.g., `http://192.168.86.69:8080/index.html`).
+   Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
+
+### Manual Installation (Alternative)
+If you prefer to set up the project manually:
 1. Clone the Repository:
    git clone https://github.com/maker-dave/starship-control-demo.git ~/spaceship
    cd ~/spaceship
@@ -29,22 +46,18 @@ A distributed starship control simulator featuring modular stations—Navigation
    Install Node.js modules:
    npm install ws express
 
-3. Start the Server:
+3. Move HTML Files:
+   Create a `public/` directory and move the HTML files from `lib/`:
+   mkdir public
+   mv lib/*.html public/
+
+4. Start the Server:
    Launch the WebSocket and HTTP server:
    node server.js
 
-4. Access the Demo:
+5. Access the Demo:
    On four devices, open http://<pi-ip-address>:8080/index.html (e.g., http://192.168.86.69:8080/index.html) in a browser.
    Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
-
-## Automated Installation
-An installation script is provided to automate the setup process:
-1. Save `install.sh` to your Pi (e.g., `/home/pi/install.sh`).
-2. Make it executable:
-   chmod +x /home/pi/install.sh
-3. Run the script:
-   ./install.sh
-The script will clone the repository, install dependencies, set up files, and start the server.
 
 ## Usage
 - Claim a Station: Select "Navigation," "Engineering," "World," or "Science" on `index.html` to redirect to the station interface.
@@ -57,15 +70,15 @@ The script will clone the repository, install dependencies, set up files, and st
 - Test Resilience: Disconnect or refresh to verify reconnection and state persistence.
 
 ## Project Files
-- index.html: Launchpad for station selection and redirection (HTML5, JavaScript, PeerJS).
-- nav.html: Navigation station interface and logic.
-- engineering.html: Engineering station interface and logic.
-- world.html: World station interface and logic (server utility).
-- science.html: Science station interface and logic.
-- server.js: WebSocket server for signaling and Express for serving files (Node.js).
-- revision_history.txt: Version history log.
-- README.txt: This file.
-- install.sh: Installation script for automated setup.
+- lib/index.html: Launchpad for station selection and redirection (HTML5, JavaScript, PeerJS).
+- lib/nav.html: Navigation station interface and logic.
+- lib/engineering.html: Engineering station interface and logic.
+- lib/world.html: World station interface and logic (server utility).
+- lib/science.html: Science station interface and logic.
+- lib/server.js: WebSocket server for signaling and Express for serving files (Node.js).
+- docs/revision_history.txt: Version history log.
+- README.md: This file (also available as README.txt).
+- tools/install.sh: Installation script for automated setup.
 
 ## Requirements
 - Node.js: Version 18+ with `ws` and `express` modules.
@@ -75,8 +88,10 @@ The script will clone the repository, install dependencies, set up files, and st
 ## Notes
 - Developed on a Raspberry Pi 4 with IP 192.168.86.69.
 - Uses Express (in `server.js`) to serve HTML files; no Apache required.
+  - Note: Early versions of this project (up to Version 0.7) used Apache 2 to serve HTML files, with `server.js` handling only WebSocket communication. Starting with Version 0.8, `server.js` was updated to use Express for serving files, consolidating HTTP and WebSocket on port 8080 and eliminating the need for Apache.
 - Navigation and Science stations receive world updates every 3 seconds, filtered by radar settings.
 - No external hosting needed; P2P handles station sync, server manages world state.
+- The `install.sh` script moves HTML files from `lib/` to `public/` during installation to match the expected structure for Express.
 
 ## Contributing
 Fork the repo, tweak the stations or add new ones, and submit a pull request—or open an issue with ideas! This is a maker-driven project—go wild with it.
