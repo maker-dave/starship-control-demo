@@ -100,14 +100,16 @@ Version 0.10 - Installation Script and File Structure Update (March 30, 2025)
   - Limited to four stations; more bridge roles (e.g., Tactical, Ops) needed for a full crew.
 - Status: Improved deployment process with automated setup; ready for further enhancements like map interpolation and additional stations.
 
-Version 0.11 - Port Change to 8123 (March 30, 2025)
-- Description: Changed the server port from 8080 to 8123 to avoid conflicts with commonly used ports, updated installation script and documentation accordingly.
+Version 0.11 - Port Changes and Installation Fixes (March 30, 2025)
+- Description: Changed the server port multiple times to avoid conflicts with commonly used ports, improved the installation script to handle port issues more robustly, added `package.json` to ensure dependency installation, and updated documentation accordingly.
 - Features:
-  - `server.js` Updated: Changed WebSocket and Express server to listen on port 8123 instead of 8080.
-  - `install.sh` Updated: Now checks and opens port 8123, with improved port conflict handling (checks for existing `server.js` processes, uses `lsof` for port checks, retries server start).
-  - `README.txt` Updated: Reflects the new port 8123 in setup instructions, requirements, and notes.
+  - `server.js` Updated: Changed WebSocket and Express server to listen on port 8126 (previously 8080, then 8123, then 8125) to avoid conflicts.
+  - `install.sh` Updated: Now uses port 8126, with enhanced port conflict handling (checks for `TIME-WAIT` states, longer delays after freeing ports, stops all `node` processes, retries server start with increased delays, ensures `node_modules/` is created with `npm init -y`).
+  - `package.json` Added: Ensures proper dependency installation for `ws` and `express`.
+  - `README.txt` Updated: Reflects the new port 8126 in setup instructions, requirements, and notes; notes ongoing port conflict issues.
 - Issues:
   - Map updates every 3 seconds can feel jumpy; needs interpolation for smoother motion in `nav.html` and `science.html`.
   - No visual feedback for radar updates on client maps (e.g., sweep animation).
   - Limited to four stations; more bridge roles (e.g., Tactical, Ops) needed for a full crew.
-- Status: Resolved port conflict issues, server should now start reliably; ready for further enhancements.
+  - Persistent `EADDRINUSE` errors on port 8123 (despite script using 8126), likely due to a mismatch in `server.js` (still set to 8123) or race conditions/lingering socket states on the Pi. To be resolved in the next session.
+- Status: Added `package.json` to fix dependency installation; port conflict issues persist and need further investigation (likely a race condition or socket state issue); will continue troubleshooting tomorrow.
