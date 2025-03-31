@@ -60,9 +60,17 @@ echo "Cloning repository from $REPO_URL into $PROJECT_DIR..."
 git clone "$REPO_URL" "$PROJECT_DIR"
 cd "$PROJECT_DIR"
 
-# Step 4: Install Node.js dependencies
+# Step 4: Install Node.js dependencies using package.json
 echo "Installing Node.js dependencies..."
-npm install ws express
+# Copy package.json from tools/ to project root
+if [ -f "$PROJECT_DIR/tools/package.json" ]; then
+    cp "$PROJECT_DIR/tools/package.json" "$PROJECT_DIR/package.json"
+    echo "Copied package.json to $PROJECT_DIR"
+else
+    echo "Error: package.json not found in $PROJECT_DIR/tools/. Installation cannot proceed."
+    exit 1
+fi
+npm install
 
 # Step 5: Create public directory and move HTML files and server.js from lib/
 echo "Setting up public directory for HTML files..."
