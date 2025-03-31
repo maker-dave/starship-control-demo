@@ -13,11 +13,15 @@
         <h1>Choose Your Station</h1>
         <button onclick="claimStation('navigation')">Navigation</button>
         <button onclick="claimStation('engineering')">Engineering</button>
+        <button onclick="claimStation('world')">World</button>
+        <button onclick="claimStation('science')">Science</button>
         <div id="status">Waiting...</div>
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.86.69:8080');
+        const wsPort = window.location.port || '8126'; // Use current port or default to 8126
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         let myPeer;
 
         socket.onopen = () => {
@@ -37,7 +41,7 @@
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'redirect') {
-                window.location.href = `${data.station}.html?peerId=${myPeer.id}&targetPeerId=${data.targetPeerId}`;
+                window.location.href = `${data.station}.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
             }
         };
     </script>
