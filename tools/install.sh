@@ -117,22 +117,23 @@ if ps aux | grep "[n]ode server.js" > /dev/null; then
         echo "Warning: Could not stop existing server.js process. Please stop it manually and rerun the script."
         exit 1
     }
+    sleep 2  # Wait for the process to fully terminate
 fi
 
 # Step 8: Check if port 8123 is in use
 echo "Checking if port $PORT is available..."
-if sudo lsof -i :$PORT > /dev/null; then
-    echo "Error: Port $PORT is already in use by another process."
-    echo "Freeing the port..."
+if sudo lsof -i :$PORT > /dev/null || ss -tuln | grep ":$PORT" > /dev/null; then
+    echo "Port $PORT is in use. Attempting to free it..."
     sudo fuser -k $PORT/tcp || {
         echo "Error: Could not free port $PORT. Please free it manually and rerun the script."
         echo "To free the port manually, run: sudo lsof -i :$PORT to find the PID, then sudo kill -9 <PID>"
         exit 1
     }
+    sleep 5  # Wait longer to ensure the port is fully released
 fi
 
 # Verify the port is free
-if sudo lsof -i :$PORT > /dev/null; then
+if sudo lsof -i :$PORT > /dev/null || ss -tuln | grep ":$PORT" > /dev/null; then
     echo "Error: Port $PORT is still in use after attempting to free it."
     echo "Please free the port manually and rerun the script."
     exit 1
@@ -149,7 +150,7 @@ MAX_RETRIES=3
 RETRY_COUNT=0
 until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
     nohup node server.js > server.log 2>&1 &
-    sleep 2
+    sleep 5  # Increased delay to ensure the server has time to bind
     if ps aux | grep "[n]ode server.js" > /dev/null; then
         echo "Server started successfully! Logs are in $PROJECT_DIR/server.log"
         break
@@ -157,15 +158,16 @@ until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
         echo "Attempt $((RETRY_COUNT + 1)) to start the server failed."
         RETRY_COUNT=$((RETRY_COUNT + 1))
         if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            echo "Retrying in 2 seconds..."
-            sleep 2
+            echo "Retrying in 5 seconds..."
+            sleep 5
             # Check port again in case it was taken
-            if sudo lsof -i :$PORT > /dev/null; then
+            if sudo lsof -i :$PORT > /dev/null || ss -tuln | grep ":$PORT" > /dev/null; then
                 echo "Port $PORT is in use again. Freeing it..."
                 sudo fuser -k $PORT/tcp || {
                     echo "Error: Could not free port $PORT. Please free it manually and rerun the script."
                     exit 1
                 }
+                sleep 5  # Wait longer after freeing the port
             fi
         fi
     fi
