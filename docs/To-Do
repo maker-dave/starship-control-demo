@@ -1,16 +1,15 @@
 Starship Control Demo To-Do List
 
 Done InProg Ignor Task
-[ ]  [ ]    [ ]   1. Remove Starfield Animation and Limit Displayed Objects
-[ ]  [ ]    [ ]     - Remove the "rushing stars" effect in Nav and Science maps.
-[ ]  [ ]    [ ]     - Only display objects (e.g., stars, asteroids) listed in
-                        world.html's sim, based on World station's object list.
+[ ]  [ ]    [ ]   1. Add Auto-Update Feature for Client Pages
+[ ]  [ ]    [ ]     - Update server.js to send a WebSocket message to clients when
+                        a page (e.g., nav.html) is updated.
+[ ]  [ ]    [ ]     - Clients listen for the message and auto-reload, preserving
+                        state via localStorage.
+[ ]  [ ]    [ ]     - Ensure WebSocket and PeerJS connections persist during
+                        reload.
 
-[ ]  [ ]    [ ]   2. Add Radar Sweep Animation to Nav and Science
-[ ]  [ ]    [ ]     - Add a radar sweep anim (e.g., rotating line or arc) to both
-                        Nav and Science maps to show radar activity.
-
-[ ]  [ ]    [ ]   3. Implement Separate Sensors for Nav and Science with Scanner
+[ ]  [ ]    [ ]   2. Implement Separate Sensors for Nav and Science with Scanner
                  Power Mechanics
 [ ]  [ ]    [ ]     - Nav gets its own sensors, separate from Science's.
 [ ]  [ ]    [ ]     - Nav sensors:
@@ -24,8 +23,8 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]     - Science retains full-power sensors with the same mechanic:
                         [Scanner Power] / [FOV] = [Range].
 [ ]  [ ]    [ ]     - Scanner power is adjustable:
-[ ]  [ ]    [ ]       - Higher scanner power increases range (or allows wider
-                        FOV) but consumes more of Eng's power production.
+[ ]  [ ]    [ ]       - Higher scanner power increases range (or allows wider FOV)
+                        but consumes more of Eng's power production.
 [ ]  [ ]    [ ]       - Lower scanner power reduces consumption but limits range
                         or FOV.
 [ ]  [ ]    [ ]     - Clients (Nav, Science) calculate their own range and filter
@@ -34,7 +33,7 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]     - Ops sends power allocation to Nav and Science via P2P, which
                         they use to adjust scanner power locally.
 
-[ ]  [ ]    [ ]   4. Enhance World Station Reporting with Separate Sensors
+[ ]  [ ]    [ ]   3. Enhance World Station Reporting with Separate Sensors
 [ ]  [ ]    [ ]     - World tracks all objects and broadcasts their positions to
                         all stations via P2P every 1 sec (as per Version 0.9).
 [ ]  [ ]    [ ]     - Nav and Science filter objects locally based on their own
@@ -44,20 +43,7 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]     - World sends periodic state updates to the server during
                         inactivity for client restoration.
 
-[ ]  [ ]    [ ]   5. Update Nav Map Orientation
-[ ]  [ ]    [ ]     - Nav map should show the ship icon pointing up (forward) by
-                        default, using its own radar data. Allow the navigator to
-                        rotate the map if requested.
-
-[ ]  [ ]    [ ]   6. Add Alert Status Indicator to All Stations Except World
-[ ]  [ ]    [ ]     - Add an alert status indicator (e.g., color-coded light or
-                        text) to Nav, Eng, and Science screens to show the ship's
-                        alert status (e.g., green for normal, yellow for caution,
-                        red for danger).
-[ ]  [ ]    [ ]     - World, as a server utility, should not have this immersive
-                        element.
-
-[ ]  [ ]    [ ]   7. Enhance Eng with Power Production and Consumption Display
+[ ]  [ ]    [ ]   4. Enhance Eng with Power Production and Consumption Display
 [ ]  [ ]    [ ]     - Add a display to Eng showing:
 [ ]  [ ]    [ ]       - Total power production.
 [ ]  [ ]    [ ]       - Power consumption breakdown (e.g., from Nav and Science
@@ -71,7 +57,7 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]     - Eng sends periodic state updates to the server during
                         inactivity.
 
-[ ]  [ ]    [ ]   8. Update Ops Station for Power Allocation
+[ ]  [ ]    [ ]   5. Update Ops Station for Power Allocation
 [ ]  [ ]    [ ]     - Ops station (logistical role) controls power allocation to
                         each station.
 [ ]  [ ]    [ ]     - Ops decides how much power each station (e.g., Nav, Science,
@@ -83,21 +69,43 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]     - Ops sends periodic state updates to the server during
                         inactivity.
 
-[ ]  [ ]    [ ]   9. Expand Station Roles
+[ ]  [ ]    [ ]   6. Test Slider Sync
+[ ]  [ ]    [ ]     - Test adjusting power (Eng) and throttle (Nav) to ensure
+                        speed syncs across stations.
+
+[ ]  [ ]    [ ]   7. Check Radar Direction
+[ ]  [ ]    [ ]     - Verify Science's radar direction slider updates the map
+                        correctly (currently at 360°, might be stuck). Ensure Nav's
+                        radar direction (if adjustable) works too.
+
+[ ]  [ ]    [ ]   8. Remove Starfield Animation and Limit Displayed Objects
+[ ]  [ ]    [ ]     - Remove the "rushing stars" effect in Nav and Science maps.
+[ ]  [ ]    [ ]     - Only display objects (e.g., stars, asteroids) listed in
+                        world.html's sim, based on World station's object list.
+
+[ ]  [ ]    [ ]   9. Update Nav Map Orientation
+[ ]  [ ]    [ ]     - Nav map should show the ship icon pointing up (forward) by
+                        default, using its own radar data. Allow the navigator to
+                        rotate the map if requested.
+
+[ ]  [ ]    [ ]   10. Add Alert Status Indicator to All Stations Except World
+[ ]  [ ]    [ ]     - Add an alert status indicator (e.g., color-coded light or
+                        text) to Nav, Eng, and Science screens to show the ship's
+                        alert status (e.g., green for normal, yellow for caution,
+                        red for danger).
+[ ]  [ ]    [ ]     - World, as a server utility, should not have this immersive
+                        element.
+
+[ ]  [ ]    [ ]   11. Add Radar Sweep Animation to Nav and Science
+[ ]  [ ]    [ ]     - Add a radar sweep anim (e.g., rotating line or arc) to both
+                        Nav and Science maps to show radar activity.
+
+[ ]  [ ]    [ ]   12. Expand Station Roles
 [ ]  [ ]    [ ]     - Add more bridge roles like Tactical (weapons) for a full
                         crew (Ops already added).
 [ ]  [ ]    [ ]     - New stations send periodic state updates to the server
                         during inactivity.
 
-[ ]  [ ]    [ ]   10. Polish Eng UI
-                 - Add visual elements like a power gauge to Eng and match the
-                 dark theme of other stations.
-
-[ ]  [ ]    [ ]   11. Test Slider Sync
-                 - Test adjusting power (Eng) and throttle (Nav) to ensure speed
-                 syncs across stations.
-
-[ ]  [ ]    [ ]   12. Check Radar Direction
-                 - Verify Science's radar direction slider updates the map
-                 correctly (currently at 360°, might be stuck). Ensure Nav's
-                 radar direction (if adjustable) works too.
+[ ]  [ ]    [ ]   13. Polish Eng UI
+[ ]  [ ]    [ ]     - Add visual elements like a power gauge to Eng and match the
+                        dark theme of other stations.
