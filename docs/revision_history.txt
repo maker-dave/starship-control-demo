@@ -1,101 +1,104 @@
-Starship Control Demo - Version History
+# Starship Control Demo
 
-Version 0.1 - Initial Concept (March 29, 2025)
-- Description: Defined the basic idea: an HTML5 app served by Apache 2 on a Raspberry Pi 4, with two stations (Navigation and Engineering) that toggle options and share statuses in real-time, stored locally via localStorage.
-- Features:
-  - Station selection (Navigation, Engineering).
-  - Navigation: Toggle FTL and Sublight, view engine statuses.
-  - Engineering: Toggle FTL and Sublight engines, view navigation statuses.
-- Status: Conceptual; no working code yet.
+A distributed starship control simulator featuring modular stations—Navigation, Engineering, World, and Science—designed to simulate real-time crew interaction and ship dynamics. Built with HTML5, WebSocket, and WebRTC (via PeerJS), this project runs on a Raspberry Pi 4, leveraging peer-to-peer communication for station sync and client-side processing, with a server tracking the external world.
 
-Version 0.2 - First WebSocket Attempt (March 29, 2025)
-- Description: Introduced WebSocket for real-time communication, served alongside Apache on the Pi at ws://192.168.86.69:8080.
-- Features:
-  - Basic index.html with station selection buttons.
-  - Node.js WebSocket server (server.js) to relay messages.
-- Issues:
-  - Clients relied on server for all communication, not P2P as desired.
-  - No local storage or UI updates implemented.
+## Features
+- Stations:
+  - Navigation: Set throttle (0-100%) and course (0-360°), calculate ship speed/course, monitor power output, view radar-filtered map.
+  - Engineering: Adjust power output (0-100%), monitor navigation inputs and ship speed.
+  - World: Server utility to manage the simulation universe, track objects, and broadcast filtered world state.
+  - Science: Configure radar settings (range, FOV, direction), monitor filtered world state on a map.
+- Real-Time Sync: Station states (throttle, course, power, radar config) sync via PeerJS P2P.
+- Distributed Processing: Clients calculate ship speed/course locally using P2P data, offloading computation from the server.
+- World Simulation: Server tracks ship position (x, y) and objects, broadcasting filtered state based on radar settings.
+- Local Persistence: Station states saved in localStorage for session continuity.
+- Reconnection Handling: WebSocket and PeerJS auto-reconnect on network drops.
+- Modular Design: `index.html` as launchpad redirects to station-specific pages (`nav.html`, `engineering.html`, `world.html`, `science.html`).
 
-Version 0.3 - Peer-to-Peer with WebRTC (March 29, 2025)
-- Description: Shifted to WebRTC via PeerJS for direct client-to-client communication, reducing server dependency.
-- Features:
-  - PeerJS integration for P2P toggling.
-  - Initial IP-based connection attempt using client IPs collected by the server.
-- Issues:
-  - Automatic peer connection via IPs failed; required manual peer ID entry.
-  - UI stuck at station selection due to WebSocket issues.
+## Prerequisites
+- Raspberry Pi 4 with Raspbian installed.
+- Node.js and npm for the WebSocket and HTTP server.
+- Git for cloning the repository.
 
-Version 0.4 - WebSocket Coordination (March 29, 2025)
-- Description: Used WebSocket server to coordinate PeerJS IDs automatically, eliminating manual entry.
-- Features:
-  - Server collects IPs and PeerJS IDs, sends setup data to clients.
-  - Clients connect directly via PeerJS after setup.
-- Issues:
-  - Clients stuck at "Claimed [station], waiting..." due to WebSocket closures from page reloads.
+## Setup Instructions
+The easiest way to set up the project is to use the provided installation script, which automates the process.
 
-Version 0.5 - Working Demo (March 29, 2025)
-- Description: Fixed WebSocket issues by avoiding page reloads, achieving a functional demo.
-- Features:
-  - Dynamic UI updates without reloading (setup/station screens).
-  - Two-way PeerJS communication: Navigation and Engineering toggle and update statuses.
-  - Local storage for toggle states.
-- Issues:
-  - No handling for disconnections (e.g., screen timeouts).
-  - Browser refreshes broke sessions.
+### Automated Installation (Recommended)
+1. Clone the repository to a temporary location:
+   git clone https://github.com/maker-dave/starship-control-demo.git /tmp/starship-control-demo
+   cd /tmp/starship-control-demo
 
-Version 0.6 - Stability Enhancements (March 29, 2025)
-- Description: Added reconnection and session persistence to handle timeouts and refreshes.
-- Features:
-  - Auto-reconnect for WebSocket and PeerJS on disconnection (e.g., screen timeout).
-  - Session restore from localStorage on refresh with a warning prompt.
-  - Persistent status updates in localStorage and UI.
-- Status: Current working version; stable for basic use on Raspberry Pi 4.
+2. Run the installation script (located in the `tools/` directory):
+   chmod +x tools/install.sh
+   ./tools/install.sh
 
-Version 0.7 - Button Color Update (March 29, 2025)
-- Description: Modified index.html to change button colors based on their status.
-- Features:
-  - Buttons turn green when "on" and red when "off" using CSS classes.
-  - Updated toggle function to dynamically adjust button colors.
-- Status: Current version with improved UI feedback.
+3. Access the Demo:
+   The script will install the project in `~/spaceship` and start the server. Access the demo at the URL provided by the script (e.g., `http://192.168.86.69:8123/index.html`).
+   Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
 
-Version 0.8 - Distributed Simulator Framework (March 30, 2025)
-- Description: Expanded the demo into a distributed starship simulator with modular station files and server-world integration, building on PeerJS P2P and WebSocket signaling.
-- Features:
-  - `index.html` as Launchpad: Station selection redirects to `nav.html` or `engineering.html` with PeerJS connection info (peer IDs) via URL parameters.
-  - `nav.html`: Navigation station with throttle (0-100%) and course (0-360°) inputs, calculates ship speed/course from local inputs and Engineering’s power output via P2P, reports speed/course to server every 5 seconds during downtime.
-  - `engineering.html`: Engineering station with power output (0-100%) input, syncs with Navigation via P2P, calculates its own speed view for display.
-  - `server.js`: Updated to redirect clients to station pages after pairing, tracks ship position (x, y) in the external world using Navigation’s updates, serves files via Express.
-  - Distributed Processing: Speed/course calculated client-side using P2P data, leveraging client CPUs for parallel computation.
-  - Local Storage: Persistent state for each station (throttle, course, power).
-- Issues:
-  - Limited to two stations (Navigation, Engineering); needs expansion for full bridge crew.
-  - Basic speed calculation lacks ramp-up delays or resistance factors.
-  - Server-world interaction is one-way (client to server); no feedback to clients yet (e.g., asteroid proximity).
-- Status: Functional prototype with distributed architecture; ready for further station additions and refinement.
+### Manual Installation (Alternative)
+If you prefer to set up the project manually:
+1. Clone the Repository:
+   git clone https://github.com/maker-dave/starship-control-demo.git ~/spaceship
+   cd ~/spaceship
 
-Version 0.9 - Radar System and Science Station (March 30, 2025)
-- Description: Introduced a radar system with limited range and field of view, added the World station as a server utility, and implemented the Science station to control radar settings, enhancing the simulation’s realism and scalability.
-- Features:
-  - `world.html` as World Station: Manages the simulation universe (600x600 area), updates object positions every 1 second using physics (velocity, acceleration), filters objects by radar range (default 300 units) and FOV (default 90°), broadcasts filtered world state every 3 seconds via P2P. Includes utilitarian interface to add, edit, and delete objects (ship, asteroids, enemies).
-  - `nav.html` Updated: Displays a centered map using the filtered world state, showing only objects within radar range and FOV, with touchscreen controls for throttle and course.
-  - `science.html` Added: Science station with touchscreen controls to set radar range (100-600 units), FOV (10-360°), and direction (0-360°), sends updates to `world.html` via P2P, displays filtered world state on a map with radar overlay.
-  - `server.js` Updated: Now waits for four stations (Navigation, Engineering, World, Science) to connect before pairing them with peer IDs for P2P communication.
-  - Radar System: Simulates a phased array radar with configurable range and FOV, defaulting to the ship’s course for direction unless set by Science, filters out objects outside range or FOV to reduce network load and add realism.
-- Issues:
-  - Map updates every 3 seconds can feel jumpy; needs interpolation for smoother motion in `nav.html` and `science.html`.
-  - No visual feedback for radar updates on client maps (e.g., sweep animation).
-  - Limited to four stations; more bridge roles (e.g., Tactical, Ops) needed for a full crew.
-- Status: Enhanced prototype with realistic radar mechanics and expanded station roles; ready for further refinement and additional stations.
+2. Install Dependencies:
+   Install Node.js modules:
+   npm install ws express
 
-Version 0.10 - Installation Script and File Structure Update (March 30, 2025)
-- Description: Added an installation script to automate setup, reorganized the repository structure, and simplified installation instructions, improving deployment usability.
-- Features:
-  - `tools/install.sh` Added: Automates cloning the repository into `~/spaceship`, installing Node.js dependencies (`ws`, `express`), moving HTML files from `lib/` to `public/`, and starting the server.
-  - Repository Structure Updated: Moved HTML files (`index.html`, `nav.html`, `engineering.html`, `world.html`, `science.html`) and `server.js` into a `lib/` directory, added `tools/` directory for `install.sh`.
-  - `README.txt` Updated: Reflects the new file structure (`lib/`, `tools/`), simplifies installation instructions to prioritize `install.sh`, and explains the file move during installation.
-- Issues:
-  - Map updates every 3 seconds can feel jumpy; needs interpolation for smoother motion in `nav.html` and `science.html`.
-  - No visual feedback for radar updates on client maps (e.g., sweep animation).
-  - Limited to four stations; more bridge roles (e.g., Tactical, Ops) needed for a full crew.
-- Status: Improved deployment process with automated setup; ready for further enhancements like map interpolation and additional stations.
+3. Move HTML Files:
+   Create a `public/` directory and move the HTML files from `lib/`:
+   mkdir public
+   mv lib/*.html public/
+
+4. Start the Server:
+   Launch the WebSocket and HTTP server:
+   node server.js
+
+5. Access the Demo:
+   On four devices, open http://<pi-ip-address>:8123/index.html (e.g., http://192.168.86.69:8123/index.html) in a browser.
+   Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
+
+## Usage
+- Claim a Station: Select "Navigation," "Engineering," "World," or "Science" on `index.html` to redirect to the station interface.
+- Control the Ship:
+  - Navigation: Adjust throttle and course sliders, watch speed/course update based on Engineering’s power, view radar-filtered map.
+  - Engineering: Set power output, monitor Navigation’s inputs and resulting speed.
+  - World: Manage simulation objects (add, edit, delete), monitor all objects on a map.
+  - Science: Configure radar settings (range, FOV, direction), monitor detected objects on a map.
+- Monitor Status: Real-time updates reflect across stations via P2P.
+- Test Resilience: Disconnect or refresh to verify reconnection and state persistence.
+
+## Project Files
+- lib/index.html: Launchpad for station selection and redirection (HTML5, JavaScript, PeerJS).
+- lib/nav.html: Navigation station interface and logic.
+- lib/engineering.html: Engineering station interface and logic.
+- lib/world.html: World station interface and logic (server utility).
+- lib/science.html: Science station interface and logic.
+- lib/server.js: WebSocket server for signaling and Express for serving files (Node.js).
+- docs/revision_history.txt: Version history log.
+- README.md: This file (also available as README.txt).
+- tools/install.sh: Installation script for automated setup.
+
+## Requirements
+- Node.js: Version 18+ with `ws` and `express` modules.
+- Network: Devices on the same network as the Pi (e.g., Wi-Fi at 192.168.86.x).
+- Ports: 8123 open for WebSocket and HTTP (sudo ufw allow 8123).
+
+## Notes
+- Developed on a Raspberry Pi 4 with IP 192.168.86.69.
+- Uses Express (in `server.js`) to serve HTML files; no Apache required.
+  - Note: Early versions of this project (up to Version 0.7) used Apache 2 to serve HTML files, with `server.js` handling only WebSocket communication. Starting with Version 0.8, `server.js` was updated to use Express for serving files, consolidating HTTP and WebSocket on port 8123 and eliminating the need for Apache.
+- Navigation and Science stations receive world updates every 3 seconds, filtered by radar settings.
+- No external hosting needed; P2P handles station sync, server manages world state.
+- The `install.sh` script moves HTML files from `lib/` to `public/` during installation to match the expected structure for Express.
+- Changed server port to 8123 to avoid conflicts with commonly used port 8080.
+
+## Contributing
+Fork the repo, tweak the stations or add new ones, and submit a pull request—or open an issue with ideas! This is a maker-driven project—go wild with it.
+
+## License
+None specified yet—open to suggestions!
+
+## Author
+- Maker Dave (cpusurgeon@gmail.com)
