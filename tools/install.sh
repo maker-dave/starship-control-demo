@@ -11,7 +11,7 @@ set -e
 HOME_DIR=$(eval echo ~$USER)
 PROJECT_DIR="$HOME_DIR/spaceship"
 REPO_URL="https://github.com/maker-dave/starship-control-demo.git"
-PORT=8123
+PORT=8126
 
 echo "Starting installation of Starship Control Demo..."
 
@@ -120,7 +120,7 @@ if ps aux | grep "[n]ode server.js" > /dev/null; then
     sleep 2  # Wait for the process to fully terminate
 fi
 
-# Step 8: Check if port 8123 is in use
+# Step 8: Check if port 8126 is in use
 echo "Checking if port $PORT is available..."
 if sudo lsof -i :$PORT > /dev/null || ss -tuln | grep ":$PORT" > /dev/null; then
     echo "Port $PORT is in use. Attempting to free it..."
@@ -140,7 +140,7 @@ if sudo lsof -i :$PORT > /dev/null || ss -tuln | grep ":$PORT" > /dev/null; then
 fi
 echo "Port $PORT is available."
 
-# Step 9: Open port 8123 for WebSocket and HTTP
+# Step 9: Open port 8126 for WebSocket and HTTP
 echo "Opening port $PORT for WebSocket and HTTP..."
 sudo ufw allow $PORT || echo "ufw not installed, skipping port configuration (ensure port $PORT is open manually if needed)."
 
