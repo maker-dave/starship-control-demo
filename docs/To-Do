@@ -2,80 +2,92 @@ Starship Control Demo To-Do List
 
 Done InProg Ignor Task
 [ ]  [ ]    [ ]   1. Remove Starfield Animation and Limit Displayed Objects
-                 - Remove the "rushing stars" effect in Nav and Science maps.
-                 Only display objects (e.g., stars, asteroids) listed in
-                 world.html's sim, based on World station's object list.
+[ ]  [ ]    [ ]     - Remove the "rushing stars" effect in Nav and Science maps.
+[ ]  [ ]    [ ]     - Only display objects (e.g., stars, asteroids) listed in
+                        world.html's sim, based on World station's object list.
 
 [ ]  [ ]    [ ]   2. Add Radar Sweep Animation to Nav and Science
-                 - Add a radar sweep anim (e.g., rotating line or arc) to both
-                 Nav and Science maps to show radar activity.
+[ ]  [ ]    [ ]     - Add a radar sweep anim (e.g., rotating line or arc) to both
+                        Nav and Science maps to show radar activity.
 
 [ ]  [ ]    [ ]   3. Implement Separate Sensors for Nav and Science with Scanner
                  Power Mechanics
-                 - Nav gets its own sensors, separate from Science's.
-                 - Nav sensors:
-                   - Can have 360° FOV at a baseline range.
-                   - Use a "scanner power" mechanic: [Scanner Power] / [FOV] =
-                   [Range].
-                   - Nav's scanner power is half of Science's (e.g., if
-                   Science's scanner power is 600, Nav's is 300).
-                   - At 360° FOV, Nav's range is half of Science's; reducing FOV
-                   increases range proportionally.
-                 - Science retains full-power sensors with the same mechanic:
-                 [Scanner Power] / [FOV] = [Range].
-                 - Scanner power is adjustable:
-                   - Higher scanner power increases range (or allows wider FOV)
-                   but consumes more of Eng's power production.
-                   - Lower scanner power reduces consumption but limits range or
-                   FOV.
+[ ]  [ ]    [ ]     - Nav gets its own sensors, separate from Science's.
+[ ]  [ ]    [ ]     - Nav sensors:
+[ ]  [ ]    [ ]       - Can have 360° FOV at a baseline range.
+[ ]  [ ]    [ ]       - Use a "scanner power" mechanic: [Scanner Power] / [FOV] =
+                        [Range].
+[ ]  [ ]    [ ]       - Nav's scanner power is half of Science's (e.g., if
+                        Science's scanner power is 600, Nav's is 300).
+[ ]  [ ]    [ ]       - At 360° FOV, Nav's range is half of Science's; reducing
+                        FOV increases range proportionally.
+[ ]  [ ]    [ ]     - Science retains full-power sensors with the same mechanic:
+                        [Scanner Power] / [FOV] = [Range].
+[ ]  [ ]    [ ]     - Scanner power is adjustable:
+[ ]  [ ]    [ ]       - Higher scanner power increases range (or allows wider
+                        FOV) but consumes more of Eng's power production.
+[ ]  [ ]    [ ]       - Lower scanner power reduces consumption but limits range
+                        or FOV.
+[ ]  [ ]    [ ]     - Clients (Nav, Science) calculate their own range and filter
+                        objects locally using P2P data from World.
+[ ]  [ ]    [ ]     - Eng sends power production data to Nav and Science via P2P.
+[ ]  [ ]    [ ]     - Ops sends power allocation to Nav and Science via P2P, which
+                        they use to adjust scanner power locally.
 
 [ ]  [ ]    [ ]   4. Enhance World Station Reporting with Separate Sensors
-                 - World tracks all objects and reports to stations when
-                 relevant:
-                   - Science: Report objects within its radar range, FOV, and
-                   direction, based on its scanner power settings.
-                   - Nav: Report objects within its own (weaker) radar range,
-                   FOV, and direction, based on its scanner power settings.
-                   - All stations: Report collisions between objects (e.g., ship
-                   hitting an asteroid), as everyone would notice.
-                 - Don't send updates about objects stations can't see based on
-                 their respective radar configurations.
+[ ]  [ ]    [ ]     - World tracks all objects and broadcasts their positions to
+                        all stations via P2P every 1 sec (as per Version 0.9).
+[ ]  [ ]    [ ]     - Nav and Science filter objects locally based on their own
+                        radar settings (range, FOV, direction, scanner power).
+[ ]  [ ]    [ ]     - World detects collisions between objects (e.g., ship hitting
+                        an asteroid) and broadcasts to all stations via P2P.
+[ ]  [ ]    [ ]     - World sends periodic state updates to the server during
+                        inactivity for client restoration.
 
 [ ]  [ ]    [ ]   5. Update Nav Map Orientation
-                 - Nav map should show the ship icon pointing up (forward) by
-                 default, using its own radar data. Allow the navigator to rotate
-                 the map if requested.
+[ ]  [ ]    [ ]     - Nav map should show the ship icon pointing up (forward) by
+                        default, using its own radar data. Allow the navigator to
+                        rotate the map if requested.
 
 [ ]  [ ]    [ ]   6. Add Alert Status Indicator to All Stations Except World
-                 - Add an alert status indicator (e.g., color-coded light or
-                 text) to Nav, Eng, and Science screens to show the ship's alert
-                 status (e.g., green for normal, yellow for caution, red for
-                 danger).
-                 - World, as a server utility, should not have this immersive
-                 element.
+[ ]  [ ]    [ ]     - Add an alert status indicator (e.g., color-coded light or
+                        text) to Nav, Eng, and Science screens to show the ship's
+                        alert status (e.g., green for normal, yellow for caution,
+                        red for danger).
+[ ]  [ ]    [ ]     - World, as a server utility, should not have this immersive
+                        element.
 
 [ ]  [ ]    [ ]   7. Enhance Eng with Power Production and Consumption Display
-                 - Add a display to Eng showing:
-                   - Total power production.
-                   - Power consumption breakdown (e.g., from Nav and Science
-                   sensors, other systems).
-                 - Eng controls power production:
-                   - Higher production burns fuel faster and wears components
-                   down faster.
-                   - Eng can reroute power to prioritize systems if needed.
+[ ]  [ ]    [ ]     - Add a display to Eng showing:
+[ ]  [ ]    [ ]       - Total power production.
+[ ]  [ ]    [ ]       - Power consumption breakdown (e.g., from Nav and Science
+                        sensors, other systems).
+[ ]  [ ]    [ ]     - Eng controls power production:
+[ ]  [ ]    [ ]       - Higher production burns fuel faster and wears components
+                        down faster.
+[ ]  [ ]    [ ]       - Eng can reroute power to prioritize systems if needed.
+[ ]  [ ]    [ ]     - Eng sends power production data to Ops, Nav, and Science via
+                        P2P.
+[ ]  [ ]    [ ]     - Eng sends periodic state updates to the server during
+                        inactivity.
 
 [ ]  [ ]    [ ]   8. Update Ops Station for Power Allocation
-                 - Ops station (logistical role) controls power allocation to
-                 each station.
-                 - Ops decides how much power each station (e.g., Nav, Science,
-                 Eng systems) gets from Eng's total production.
-                 - Tie this into the scanner power mechanics: Ops allocates power
-                 to Nav and Science for their sensors, affecting their scanner
-                 power.
+[ ]  [ ]    [ ]     - Ops station (logistical role) controls power allocation to
+                        each station.
+[ ]  [ ]    [ ]     - Ops decides how much power each station (e.g., Nav, Science,
+                        Eng systems) gets from Eng's total production.
+[ ]  [ ]    [ ]     - Ops sends power allocation to Nav, Science, and other
+                        stations via P2P.
+[ ]  [ ]    [ ]     - Nav and Science adjust their scanner power locally based on
+                        Ops' allocation.
+[ ]  [ ]    [ ]     - Ops sends periodic state updates to the server during
+                        inactivity.
 
 [ ]  [ ]    [ ]   9. Expand Station Roles
-                 - Add more bridge roles like Tactical (weapons) for a full crew
-                 (Ops already added).
+[ ]  [ ]    [ ]     - Add more bridge roles like Tactical (weapons) for a full
+                        crew (Ops already added).
+[ ]  [ ]    [ ]     - New stations send periodic state updates to the server
+                        during inactivity.
 
 [ ]  [ ]    [ ]   10. Polish Eng UI
                  - Add visual elements like a power gauge to Eng and match the
