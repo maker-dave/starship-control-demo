@@ -11,10 +11,11 @@ set -e
 HOME_DIR=$(eval echo ~$USER)
 PROJECT_DIR="$HOME_DIR/spaceship"
 REPO_URL="https://github.com/maker-dave/starship-control-demo.git"
+PORT=8123
 
 echo "Starting installation of Starship Control Demo..."
 
-# Step 1: Check for required tools (git, curl for Node.js setup)
+# Step 1: Check for required tools (git, curl for Node.js setup, lsof for port checking)
 echo "Checking for required tools..."
 if ! command -v git &> /dev/null; then
     echo "Git is not installed. Installing git..."
@@ -26,6 +27,12 @@ if ! command -v curl &> /dev/null; then
     echo "Curl is not installed. Installing curl..."
     sudo apt update
     sudo apt install -y curl
+fi
+
+if ! command -v lsof &> /dev/null; then
+    echo "lsof is not installed. Installing lsof..."
+    sudo apt update
+    sudo apt install -y lsof
 fi
 
 # Step 2: Install Node.js and npm (if not already installed)
@@ -102,28 +109,77 @@ for file in "${REQUIRED_FILES[@]}"; do
     fi
 done
 
-# Step 7: Open port 8080 for WebSocket and HTTP
-echo "Opening port 8080 for WebSocket and HTTP..."
-sudo ufw allow 8080 || echo "ufw not installed, skipping port configuration (ensure port 8080 is open manually if needed)."
-
-# Step 8: Start the server in the background
-echo "Starting the server..."
-nohup node server.js > server.log 2>&1 &
-
-# Wait a moment for the server to start
-sleep 2
-
-# Check if the server is running
+# Step 7: Check for and stop any existing server.js processes
+echo "Checking for existing server.js processes..."
 if ps aux | grep "[n]ode server.js" > /dev/null; then
-    echo "Server started successfully! Logs are in $PROJECT_DIR/server.log"
-else
-    echo "Failed to start the server. Check $PROJECT_DIR/server.log for details."
+    echo "Found existing server.js process. Stopping it..."
+    pkill -f 'node server.js' || {
+        echo "Warning: Could not stop existing server.js process. Please stop it manually and rerun the script."
+        exit 1
+    }
+fi
+
+# Step 8: Check if port 8123 is in use
+echo "Checking if port $PORT is available..."
+if sudo lsof -i :$PORT > /dev/null; then
+    echo "Error: Port $PORT is already in use by another process."
+    echo "Freeing the port..."
+    sudo fuser -k $PORT/tcp || {
+        echo "Error: Could not free port $PORT. Please free it manually and rerun the script."
+        echo "To free the port manually, run: sudo lsof -i :$PORT to find the PID, then sudo kill -9 <PID>"
+        exit 1
+    }
+fi
+
+# Verify the port is free
+if sudo lsof -i :$PORT > /dev/null; then
+    echo "Error: Port $PORT is still in use after attempting to free it."
+    echo "Please free the port manually and rerun the script."
+    exit 1
+fi
+echo "Port $PORT is available."
+
+# Step 9: Open port 8123 for WebSocket and HTTP
+echo "Opening port $PORT for WebSocket and HTTP..."
+sudo ufw allow $PORT || echo "ufw not installed, skipping port configuration (ensure port $PORT is open manually if needed)."
+
+# Step 10: Start the server in the background with retries
+echo "Starting the server..."
+MAX_RETRIES=3
+RETRY_COUNT=0
+until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
+    nohup node server.js > server.log 2>&1 &
+    sleep 2
+    if ps aux | grep "[n]ode server.js" > /dev/null; then
+        echo "Server started successfully! Logs are in $PROJECT_DIR/server.log"
+        break
+    else
+        echo "Attempt $((RETRY_COUNT + 1)) to start the server failed."
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "Retrying in 2 seconds..."
+            sleep 2
+            # Check port again in case it was taken
+            if sudo lsof -i :$PORT > /dev/null; then
+                echo "Port $PORT is in use again. Freeing it..."
+                sudo fuser -k $PORT/tcp || {
+                    echo "Error: Could not free port $PORT. Please free it manually and rerun the script."
+                    exit 1
+                }
+            fi
+        fi
+    fi
+done
+
+if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "Failed to start the server after $MAX_RETRIES attempts. Displaying server log for details:"
+    cat "$PROJECT_DIR/server.log"
     exit 1
 fi
 
-# Step 9: Display access instructions
+# Step 11: Display access instructions
 PI_IP=$(hostname -I | awk '{print $1}')
 echo "Installation complete!"
-echo "Access the demo at: http://$PI_IP:8080/index.html"
+echo "Access the demo at: http://$PI_IP:$PORT/index.html"
 echo "To stop the server, run: pkill -f 'node server.js'"
 echo "To restart the server, run: cd $PROJECT_DIR && nohup node server.js > server.log 2>&1 &"
