@@ -1,0 +1,16 @@
+{
+  "name": "starship-control-demo",
+  "version": "0.11.0",
+  "description": "A distributed starship control simulator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "express": "^4.18.2",
+    "chokidar": "^3.5.3"
+  },
+  "author": "Maker Dave",
+  "license": "ISC"
+}
