@@ -33,7 +33,7 @@ The easiest way to set up the project is to use the provided installation script
    ./tools/install.sh
 
 3. Access the Demo:
-   The script will install the project in `~/spaceship` and start the server. Access the demo at the URL provided by the script (e.g., `http://192.168.86.69:8123/index.html`).
+   The script will install the project in `~/spaceship` and start the server. Access the demo at the URL provided by the script (e.g., `http://192.168.86.69:8126/index.html`).
    Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
 
 ### Manual Installation (Alternative)
@@ -44,6 +44,7 @@ If you prefer to set up the project manually:
 
 2. Install Dependencies:
    Install Node.js modules:
+   npm init -y
    npm install ws express
 
 3. Move HTML Files:
@@ -56,7 +57,7 @@ If you prefer to set up the project manually:
    node server.js
 
 5. Access the Demo:
-   On four devices, open http://<pi-ip-address>:8123/index.html (e.g., http://192.168.86.69:8123/index.html) in a browser.
+   On four devices, open http://<pi-ip-address>:8126/index.html (e.g., http://192.168.86.69:8126/index.html) in a browser.
    Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
 
 ## Usage
@@ -79,20 +80,21 @@ If you prefer to set up the project manually:
 - docs/revision_history.txt: Version history log.
 - README.md: This file (also available as README.txt).
 - tools/install.sh: Installation script for automated setup.
+- package.json: Added to ensure proper dependency installation.
 
 ## Requirements
 - Node.js: Version 18+ with `ws` and `express` modules.
 - Network: Devices on the same network as the Pi (e.g., Wi-Fi at 192.168.86.x).
-- Ports: 8123 open for WebSocket and HTTP (sudo ufw allow 8123).
+- Ports: 8126 open for WebSocket and HTTP (sudo ufw allow 8126).
 
 ## Notes
 - Developed on a Raspberry Pi 4 with IP 192.168.86.69.
 - Uses Express (in `server.js`) to serve HTML files; no Apache required.
-  - Note: Early versions of this project (up to Version 0.7) used Apache 2 to serve HTML files, with `server.js` handling only WebSocket communication. Starting with Version 0.8, `server.js` was updated to use Express for serving files, consolidating HTTP and WebSocket on port 8123 and eliminating the need for Apache.
+  - Note: Early versions of this project (up to Version 0.7) used Apache 2 to serve HTML files, with `server.js` handling only WebSocket communication. Starting with Version 0.8, `server.js` was updated to use Express for serving files, consolidating HTTP and WebSocket on port 8126 and eliminating the need for Apache.
 - Navigation and Science stations receive world updates every 3 seconds, filtered by radar settings.
 - No external hosting needed; P2P handles station sync, server manages world state.
 - The `install.sh` script moves HTML files from `lib/` to `public/` during installation to match the expected structure for Express.
-- Changed server port to 8123 to avoid conflicts with commonly used port 8080.
+- Changed server port to 8126 to avoid conflicts with commonly used ports (previously 8080, then 8123, then 8125). However, there are ongoing issues with `EADDRINUSE` errors, likely due to race conditions or lingering socket states on the Pi.
 
 ## Contributing
 Fork the repo, tweak the stations or add new ones, and submit a pull request—or open an issue with ideas! This is a maker-driven project—go wild with it.
