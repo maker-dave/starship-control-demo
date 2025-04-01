@@ -18,38 +18,58 @@
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.86.69:8080');
+        const wsPort = window.location.port || '8126';
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         const params = new URLSearchParams(window.location.search);
         const myPeerId = params.get('peerId');
-        const targetPeerId = params.get('targetPeerId');
+        const targetPeerIds = params.get('targetPeerIds') ? params.get('targetPeerIds').split(',') : [];
 
         let myPeer = new Peer(myPeerId);
-        let conn;
+        let connections = new Map();
         let localState = JSON.parse(localStorage.getItem('engState')) || { power: 0 };
         let remoteState = { throttle: 0, course: 0 };
         let shipState = { speed: 0 };
 
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('connection-status').innerText = 'Connected';
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'engineering.html') {
+                console.log('Engineering page updated, reloading...');
+                localStorage.setItem('engState', JSON.stringify(localState));
+                location.reload();
+            }
+        };
+
         myPeer.on('open', () => {
-            conn = myPeer.connect(targetPeerId);
-            conn.on('open', () => {
-                document.getElementById('connection-status').innerText = 'Connected';
-                conn.send(JSON.stringify(localState));
-            });
-            conn.on('data', (data) => {
-                const parsed = JSON.parse(data);
-                if (parsed.throttle) remoteState.throttle = parsed.throttle;
-                if (parsed.course) remoteState.course = parsed.course;
-                calculateShipState();
+            targetPeerIds.forEach(targetPeerId => {
+                const conn = myPeer.connect(targetPeerId);
+                connections.set(targetPeerId, conn);
+                conn.on('open', () => {
+                    document.getElementById('connection-status').innerText = 'Connected';
+                    conn.send(JSON.stringify(localState));
+                });
+                conn.on('data', (data) => {
+                    const parsed = JSON.parse(data);
+                    if (parsed.throttle) remoteState.throttle = parsed.throttle;
+                    if (parsed.course) remoteState.course = parsed.course;
+                    calculateShipState();
+                });
             });
         });
 
         myPeer.on('connection', (connection) => {
-            conn = connection;
-            conn.on('open', () => {
+            connections.set(connection.peer, connection);
+            connection.on('open', () => {
                 document.getElementById('connection-status').innerText = 'Connected';
-                conn.send(JSON.stringify(localState));
+                connection.send(JSON.stringify(localState));
             });
-            conn.on('data', (data) => {
+            connection.on('data', (data) => {
                 const parsed = JSON.parse(data);
                 if (parsed.throttle) remoteState.throttle = parsed.throttle;
                 if (parsed.course) remoteState.course = parsed.course;
@@ -60,7 +80,9 @@
         function updateState() {
             localState.power = parseInt(document.getElementById('power').value);
             localStorage.setItem('engState', JSON.stringify(localState));
-            if (conn && conn.open) conn.send(JSON.stringify(localState));
+            connections.forEach((conn) => {
+                if (conn && conn.open) conn.send(JSON.stringify(localState));
+            });
             calculateShipState();
         }
 
