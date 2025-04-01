@@ -1,12 +1,12 @@
 Starship Control Demo To-Do List
 
 Done InProg Ignor Task
-[ ]  [ ]    [ ]   1. Add Auto-Update Feature for Client Pages
-[ ]  [ ]    [ ]     - Update server.js to send a WebSocket message to clients when
+[x]  [ ]    [ ]   1. Add Auto-Update Feature for Client Pages
+[x]  [ ]    [ ]     - Update server.js to send a WebSocket message to clients when
                         a page (e.g., nav.html) is updated.
-[ ]  [ ]    [ ]     - Clients listen for the message and auto-reload, preserving
+[x]  [ ]    [ ]     - Clients listen for the message and auto-reload, preserving
                         state via localStorage.
-[ ]  [ ]    [ ]     - Ensure WebSocket and PeerJS connections persist during
+[x]  [ ]    [ ]     - Ensure WebSocket and PeerJS connections persist during
                         reload.
 
 [ ]  [ ]    [ ]   2. Implement Separate Sensors for Nav and Science with Scanner
@@ -57,12 +57,12 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]     - Eng sends periodic state updates to the server during
                         inactivity.
 
-[ ]  [ ]    [ ]   5. Update Ops Station for Power Allocation
-[ ]  [ ]    [ ]     - Ops station (logistical role) controls power allocation to
+[ ]  [x]    [ ]   5. Update Ops Station for Power Allocation
+[ ]  [x]    [ ]     - Ops station (logistical role) controls power allocation to
                         each station.
-[ ]  [ ]    [ ]     - Ops decides how much power each station (e.g., Nav, Science,
+[ ]  [x]    [ ]     - Ops decides how much power each station (e.g., Nav, Science,
                         Eng systems) gets from Eng's total production.
-[ ]  [ ]    [ ]     - Ops sends power allocation to Nav, Science, and other
+[ ]  [x]    [ ]     - Ops sends power allocation to Nav, Science, and other
                         stations via P2P.
 [ ]  [ ]    [ ]     - Nav and Science adjust their scanner power locally based on
                         Ops' allocation.
@@ -109,3 +109,21 @@ Done InProg Ignor Task
 [ ]  [ ]    [ ]   13. Polish Eng UI
 [ ]  [ ]    [ ]     - Add visual elements like a power gauge to Eng and match the
                         dark theme of other stations.
+
+[x]  [ ]    [ ]   14. Implement Dynamic Station Config
+[x]  [ ]    [ ]     - Create config.html to manage stations.json.
+[x]  [ ]    [ ]     - Update server.js to load/watch stations.json with chokidar.
+[x]  [ ]    [ ]     - Fields: name, htmlFile, shipId.
+
+[ ]  [x]    [ ]   15. Add Ship Configuration
+[ ]  [x]    [ ]     - Extend stations.json with ships section: id, name, maxPower,
+                        radarRange.
+[ ]  [x]    [ ]     - Update config.html to manage ships and assign stations.
+[ ]  [x]    [ ]     - Balanced approach: Basic ship IDs and stats now, expand
+                        later.
+
+[ ]  [ ]    [ ]   16. Implement Ship Overlays in nav.html
+[ ]  [ ]    [ ]     - Single nav.html with CSS/JS overlays for ship types (e.g.,
+                        Federation, Klingon, Babylon 5, Valkyrie, Battlestar
+                        Galactica).
+[ ]  [ ]    [ ]     - Load overlay based on shipId from stations.json.
