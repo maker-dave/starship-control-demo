@@ -115,68 +115,65 @@
             console.log('Received:', data);
             if (data.type === 'page-update' && data.file === 'world.html') {
                 console.log('World page updated, reloading...');
-                location.reload(); // No localStorage to save here yet
+                location.reload();
+            } else if (data.type === 'peerUpdate') {
+                if (!connections.has(data.peerId)) {
+                    const conn = myPeer.connect(data.peerId);
+                    connections.set(data.peerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Connected to new peer: ${data.peerId}`);
+                        conn.send(JSON.stringify({ world: worldState }));
+                    });
+                    conn.on('data', handlePeerData);
+                }
             }
         };
 
         myPeer.on('open', () => {
             targetPeerIds.forEach(targetPeerId => {
-                const conn = myPeer.connect(targetPeerId);
-                connections.set(targetPeerId, conn);
-                conn.on('open', () => {
-                    document.getElementById('connection-status').innerText = 'Connected';
-                    conn.send(JSON.stringify({ world: worldState }));
-                });
-                conn.on('data', (data) => {
-                    const parsed = JSON.parse(data);
-                    if (parsed.speed && parsed.course) {
-                        const rad = parsed.course * Math.PI / 180;
-                        worldState.ship.velocityX = parsed.speed * Math.cos(rad);
-                        worldState.ship.velocityY = parsed.speed * Math.sin(rad);
-                        worldState.ship.course = parsed.course;
-                        if (!radarConfig.directionSetByScience) {
-                            radarConfig.direction = parsed.course;
-                        }
-                    }
-                    if (parsed.radarConfig) {
-                        radarConfig.range = parsed.radarConfig.range;
-                        radarConfig.fov = parsed.radarConfig.fov;
-                        radarConfig.direction = parsed.radarConfig.direction;
-                        radarConfig.directionSetByScience = true;
-                        document.getElementById('radarRange').value = radarConfig.range;
-                        document.getElementById('radarFOV').value = radarConfig.fov;
-                    }
-                });
+                if (targetPeerId) {  // Ensure not empty
+                    const conn = myPeer.connect(targetPeerId);
+                    connections.set(targetPeerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Initial connection to: ${targetPeerId}`);
+                        document.getElementById('connection-status').innerText = 'Connected';
+                        conn.send(JSON.stringify({ world: worldState }));
+                    });
+                    conn.on('data', handlePeerData);
+                }
             });
         });
 
         myPeer.on('connection', (connection) => {
             connections.set(connection.peer, connection);
             connection.on('open', () => {
+                console.log(`New incoming connection from: ${connection.peer}`);
                 document.getElementById('connection-status').innerText = 'Connected';
                 connection.send(JSON.stringify({ world: worldState }));
             });
-            connection.on('data', (data) => {
-                const parsed = JSON.parse(data);
-                if (parsed.speed && parsed.course) {
-                    const rad = parsed.course * Math.PI / 180;
-                    worldState.ship.velocityX = parsed.speed * Math.cos(rad);
-                    worldState.ship.velocityY = parsed.speed * Math.sin(rad);
-                    worldState.ship.course = parsed.course;
-                    if (!radarConfig.directionSetByScience) {
-                        radarConfig.direction = parsed.course;
-                    }
-                }
-                if (parsed.radarConfig) {
-                    radarConfig.range = parsed.radarConfig.range;
-                    radarConfig.fov = parsed.radarConfig.fov;
-                    radarConfig.direction = parsed.radarConfig.direction;
-                    radarConfig.directionSetByScience = true;
-                    document.getElementById('radarRange').value = radarConfig.range;
-                    document.getElementById('radarFOV').value = radarConfig.fov;
-                }
-            });
+            connection.on('data', handlePeerData);
         });
+
+        function handlePeerData(data) {
+            const parsed = JSON.parse(data);
+            if (parsed.speed && parsed.course) {
+                const rad = parsed.course * Math.PI / 180;
+                worldState.ship.velocityX = parsed.speed * Math.cos(rad);
+                worldState.ship.velocityY = parsed.speed * Math.sin(rad);
+                worldState.ship.course = parsed.course;
+                if (!radarConfig.directionSetByScience) {
+                    radarConfig.direction = parsed.course;
+                }
+            }
+            if (parsed.radarConfig) {
+                radarConfig.range = parsed.radarConfig.range;
+                radarConfig.fov = parsed.radarConfig.fov;
+                radarConfig.direction = parsed.radarConfig.direction;
+                radarConfig.directionSetByScience = true;
+                document.getElementById('radarRange').value = radarConfig.range;
+                document.getElementById('radarFOV').value = radarConfig.fov;
+            }
+        }
 
         function broadcastWorldState() {
             const filteredObjects = worldState.objects.filter(obj => {
