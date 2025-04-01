@@ -77,7 +77,9 @@
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.86.69:8080');
+        const wsPort = window.location.port || '8126';
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         const params = new URLSearchParams(window.location.search);
         const myPeerId = params.get('peerId');
         const targetPeerIds = params.get('targetPeerIds') ? params.get('targetPeerIds').split(',') : [];
@@ -102,6 +104,20 @@
 
         const canvas = document.getElementById('worldMap');
         const ctx = canvas.getContext('2d');
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('connection-status').innerText = 'Connected';
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'world.html') {
+                console.log('World page updated, reloading...');
+                location.reload(); // No localStorage to save here yet
+            }
+        };
 
         myPeer.on('open', () => {
             targetPeerIds.forEach(targetPeerId => {
@@ -316,7 +332,7 @@
         function updateRadarConfig() {
             radarConfig.range = parseFloat(document.getElementById('radarRange').value);
             radarConfig.fov = parseFloat(document.getElementById('radarFOV').value);
-            radarConfig.directionSetByScience = false; // Allow manual override on World
+            radarConfig.directionSetByScience = false;
         }
 
         setInterval(() => {
