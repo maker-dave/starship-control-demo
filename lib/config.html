@@ -64,9 +64,15 @@
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.86.69:8126');
+        const wsPort = window.location.port || '8126';
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         const params = new URLSearchParams(window.location.search);
         const myPeerId = params.get('peerId') || 'config';
+        const targetPeerIds = params.get('targetPeerIds') ? params.get('targetPeerIds').split(',') : [];
+
+        let myPeer = new Peer(myPeerId);
+        let connections = new Map();
         let config = { stations: [], ships: [] };
         let editingStationIdx = -1;
         let editingShipIdx = -1;
@@ -79,11 +85,53 @@
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.type === 'config') {
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'config.html') {
+                console.log('Config page updated, reloading...');
+                location.reload();
+            } else if (data.type === 'config') {
                 config = data.config || { stations: [], ships: [] };
                 updateTables();
+            } else if (data.type === 'peerUpdate') {
+                if (!connections.has(data.peerId)) {
+                    const conn = myPeer.connect(data.peerId);
+                    connections.set(data.peerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Connected to new peer: ${data.peerId}`);
+                        // No data to send yet, but connection established
+                    });
+                    conn.on('data', handlePeerData);
+                }
             }
         };
+
+        myPeer.on('open', () => {
+            targetPeerIds.forEach(targetPeerId => {
+                if (targetPeerId) {  // Ensure not empty
+                    const conn = myPeer.connect(targetPeerId);
+                    connections.set(targetPeerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Initial connection to: ${targetPeerId}`);
+                        // No initial data to send yet
+                    });
+                    conn.on('data', handlePeerData);
+                }
+            });
+        });
+
+        myPeer.on('connection', (connection) => {
+            connections.set(connection.peer, connection);
+            connection.on('open', () => {
+                console.log(`New incoming connection from: ${connection.peer}`);
+                // No data to send yet
+            });
+            connection.on('data', handlePeerData);
+        });
+
+        function handlePeerData(data) {
+            console.log('Received peer data:', data);
+            // Currently no data expected, but handler is here for future use
+        }
 
         function updateTables() {
             const stationTable = document.getElementById('stationTable');
