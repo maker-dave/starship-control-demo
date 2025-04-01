@@ -11,10 +11,7 @@
 <body>
     <div class="panel">
         <h1>Choose Your Station</h1>
-        <button onclick="claimStation('navigation')">Navigation</button>
-        <button onclick="claimStation('engineering')">Engineering</button>
-        <button onclick="claimStation('world')">World</button>
-        <button onclick="claimStation('science')">Science</button>
+        <div id="stationButtons"></div>
         <div id="status">Waiting...</div>
     </div>
 
@@ -27,6 +24,7 @@
         socket.onopen = () => {
             console.log('WebSocket connected');
             document.getElementById('status').innerText = 'Connected - Select a station';
+            socket.send(JSON.stringify({ type: 'getConfig' }));
         };
 
         socket.onmessage = (event) => {
@@ -34,11 +32,24 @@
             console.log('Received:', data);
             if (data.type === 'page-update' && data.file === 'index.html') {
                 console.log('Index page updated, reloading...');
-                location.reload(); // No state to save yet
+                location.reload();
+            } else if (data.type === 'config') {
+                updateStationButtons(data.config.stations);
             } else if (data.type === 'redirect') {
                 window.location.href = `${data.station}.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
             }
         };
+
+        function updateStationButtons(stations) {
+            const buttonDiv = document.getElementById('stationButtons');
+            buttonDiv.innerHTML = '';
+            stations.forEach(station => {
+                const button = document.createElement('button');
+                button.textContent = station.name.charAt(0).toUpperCase() + station.name.slice(1);
+                button.onclick = () => claimStation(station.name);
+                buttonDiv.appendChild(button);
+            });
+        }
 
         function claimStation(station) {
             localStorage.setItem('myStation', station);
