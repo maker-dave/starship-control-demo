@@ -43,7 +43,9 @@
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.86.69:8080');
+        const wsPort = window.location.port || '8126';
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         const params = new URLSearchParams(window.location.search);
         const myPeerId = params.get('peerId');
         const targetPeerIds = params.get('targetPeerIds') ? params.get('targetPeerIds').split(',') : [];
@@ -56,6 +58,21 @@
 
         const canvas = document.getElementById('scienceMap');
         const ctx = canvas.getContext('2d');
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('connection-status').innerText = 'Connected';
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'science.html') {
+                console.log('Science page updated, reloading...');
+                localStorage.setItem('scienceState', JSON.stringify(radarConfig));
+                location.reload();
+            }
+        };
 
         myPeer.on('open', () => {
             targetPeerIds.forEach(targetPeerId => {
@@ -73,7 +90,7 @@
             connections.set(connection.peer, connection);
             connection.on('open', () => {
                 document.getElementById('connection-status').innerText = 'Connected';
-                connection.send(JSON.stringify({ radarConfig }));
+                conn.send(JSON.stringify({ radarConfig }));
             });
             connection.on('data', handlePeerData);
         });
@@ -111,13 +128,11 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw stars
             for (let i = 0; i < 100; i++) {
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
             }
 
-            // Draw radar range and FOV (for Science officer's visibility)
             ctx.beginPath();
             ctx.arc(canvas.width / 2, canvas.height / 2, radarConfig.range, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(0, 255, 0, 0.2)';
@@ -132,7 +147,6 @@
             ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
             ctx.fill();
 
-            // Draw objects (filtered by World)
             worldState.objects.forEach(obj => {
                 const dx = obj.x - worldState.ship.x;
                 const dy = obj.y - worldState.ship.y;
@@ -144,7 +158,6 @@
                 ctx.fill();
             });
 
-            // Draw ship (centered)
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate((worldState.ship.course + 90) * Math.PI / 180);
@@ -162,7 +175,9 @@
             drawMap();
         }, 100);
 
-        // Initial UI setup
+        // Restore state and initial UI setup
+        const savedState = JSON.parse(localStorage.getItem('scienceState')) || radarConfig;
+        radarConfig = savedState;
         document.getElementById('radarRange').value = radarConfig.range;
         document.getElementById('radarFOV').value = radarConfig.fov;
         document.getElementById('radarDirection').value = radarConfig.direction;
