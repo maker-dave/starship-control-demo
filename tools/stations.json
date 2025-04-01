@@ -4,7 +4,8 @@
         {"name": "engineering", "htmlFile": "engineering.html", "shipId": "enterprise"},
         {"name": "world", "htmlFile": "world.html", "shipId": "enterprise"},
         {"name": "science", "htmlFile": "science.html", "shipId": "enterprise"},
-        {"name": "config", "htmlFile": "config.html", "shipId": ""}
+        {"name": "config", "htmlFile": "config.html", "shipId": ""},
+        {"name": "ops", "htmlFile": "ops.html", "shipId": "enterprise"}
     ],
     "ships": [
         {"id": "enterprise", "name": "Enterprise", "maxPower": 1000, "radarRange": 600}
