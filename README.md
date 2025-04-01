@@ -49,7 +49,7 @@ Easiest setup uses the install script to automate the process.
 3. Move Files:
    mkdir public
    mv lib/*.html public/
-   cp stations.json .
+   cp tools/stations.json .
 4. Start Server:
    node server.js
 5. Access Demo:
@@ -68,19 +68,21 @@ Easiest setup uses the install script to automate the process.
 - Test: Edit file/refresh to check auto-update
 
 ## Project Files
+- docs/revision_history.txt: Version log
+- docs/To-Do: Task list
+- lib/config.html: Config station
+- lib/engineering.html: Eng station
 - lib/index.html: Launchpad (HTML5, JS, PeerJS)
 - lib/nav.html: Nav station
-- lib/engineering.html: Eng station
-- lib/world.html: World station (utility)
-- lib/science.html: Sci station
 - lib/ops.html: Ops station
-- lib/config.html: Config station
+- lib/science.html: Sci station
 - lib/server.js: WebSocket/Express server
-- stations.json: Station/ship config
-- docs/revision_history.txt: Version log
-- README.md: This file (also README.txt)
+- lib/world.html: World station (utility)
 - tools/install.sh: Install script
-- package.json: Dependency setup
+- tools/package.json: Dependency setup
+- tools/setup_starship.sh: Setup script
+- tools/stations.json: Station/ship config
+- README.md: This file (also README.txt)
 
 ## Requirements
 - Node.js: 18+ with `ws`, `express`, `chokidar`
