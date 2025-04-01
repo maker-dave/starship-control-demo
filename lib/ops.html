@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Operations Station</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        .panel { text-align: center; padding: 20px; background: #111; color: #fff; min-height: 100vh; }
+        .controls { display: flex; justify-content: center; gap: 20px; margin: 20px; }
+        .touchscreen { border: 2px solid #333; padding: 15px; border-radius: 10px; background: #222; width: 300px; }
+        input[type="range"] { width: 200px; background: #333; color: #fff; border: none; padding: 5px; }
+        label { display: block; margin: 5px 0; }
+        h3 { margin: 0 0 10px; }
+        #connection-status { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Operations Station</h1>
+        <div class="controls">
+            <div class="touchscreen">
+                <h3>Power Allocation</h3>
+                <label>Navigation (%):</label>
+                <input type="range" id="navPower" min="0" max="100" value="25" oninput="updateAllocations()">
+                <label>Science (%):</label>
+                <input type="range" id="sciencePower" min="0" max="100" value="25" oninput="updateAllocations()">
+                <label>Engineering (%):</label>
+                <input type="range" id="engPower" min="0" max="100" value="50" oninput="updateAllocations()">
+            </div>
+            <div class="touchscreen">
+                <h3>Power Status</h3>
+                <div>Total Power: <span id="totalPower">0</span>%</div>
+                <div>Allocated: <span id="allocatedPower">0</span>%</div>
+            </div>
+        </div>
+        <div id="connection-status">Connecting...</div>
+    </div>
+
+    <script>
+        const wsPort = window.location.port || '8126';
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
+        const params = new URLSearchParams(window.location.search);
+        const myPeerId = params.get('peerId');
+        const targetPeerIds = params.get('targetPeerIds') ? params.get('targetPeerIds').split(',') : [];
+
+        let myPeer = new Peer(myPeerId);
+        let connections = new Map();
+        let localState = JSON.parse(localStorage.getItem('opsState')) || { navPower: 25, sciencePower: 25, engPower: 50 };
+        let totalPower = 0;
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('connection-status').innerText = 'Connected';
+            socket.send(JSON.stringify({ type: 'claim', station: 'ops', peerId: myPeerId }));
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'ops.html') {
+                console.log('Ops page updated, reloading...');
+                localStorage.setItem('opsState', JSON.stringify(localState));
+                location.reload();
+            } else if (data.type === 'redirect') {
+                window.location.href = `ops.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
+            }
+        };
+
+        myPeer.on('open', () => {
+            targetPeerIds.forEach(targetPeerId => {
+                const conn = myPeer.connect(targetPeerId);
+                connections.set(targetPeerId, conn);
+                conn.on('open', () => {
+                    document.getElementById('connection-status').innerText = 'Connected';
+                    conn.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
+                });
+                conn.on('data', (data) => {
+                    const parsed = JSON.parse(data);
+                    if (parsed.power) {
+                        totalPower = parsed.power;
+                        updateStatus();
+                    }
+                });
+            });
+        });
+
+        myPeer.on('connection', (connection) => {
+            connections.set(connection.peer, connection);
+            connection.on('open', () => {
+                document.getElementById('connection-status').innerText = 'Connected';
+                connection.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
+            });
+            connection.on('data', (data) => {
+                const parsed = JSON.parse(data);
+                if (parsed.power) {
+                    totalPower = parsed.power;
+                    updateStatus();
+                }
+            });
+        });
+
+        function updateAllocations() {
+            const navPower = parseInt(document.getElementById('navPower').value);
+            const sciencePower = parseInt(document.getElementById('sciencePower').value);
+            const engPower = parseInt(document.getElementById('engPower').value);
+            const totalAllocated = navPower + sciencePower + engPower;
+
+            // Enforce total power limit
+            if (totalAllocated > totalPower) {
+                const scale = totalPower / totalAllocated;
+                localState.navPower = Math.round(navPower * scale);
+                localState.sciencePower = Math.round(sciencePower * scale);
+                localState.engPower = Math.round(engPower * scale);
+                document.getElementById('navPower').value = localState.navPower;
+                document.getElementById('sciencePower').value = localState.sciencePower;
+                document.getElementById('engPower').value = localState.engPower;
+            } else {
+                localState.navPower = navPower;
+                localState.sciencePower = sciencePower;
+                localState.engPower = engPower;
+            }
+
+            localStorage.setItem('opsState', JSON.stringify(localState));
+            connections.forEach((conn) => {
+                if (conn && conn.open) {
+                    conn.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
+                }
+            });
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const totalAllocated = localState.navPower + localState.sciencePower + localState.engPower;
+            document.getElementById('totalPower').innerText = totalPower;
+            document.getElementById('allocatedPower').innerText = totalAllocated;
+        }
+
+        // Initial setup
+        document.getElementById('navPower').value = localState.navPower;
+        document.getElementById('sciencePower').value = localState.sciencePower;
+        document.getElementById('engPower').value = localState.engPower;
+        updateAllocations();
+    </script>
+</body>
+</html>
