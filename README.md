@@ -1,106 +1,106 @@
 # Starship Control Demo
 
-A distributed starship control simulator featuring modular stations—Navigation, Engineering, World, and Science—designed to simulate real-time crew interaction and ship dynamics. Built with HTML5, WebSocket, and WebRTC (via PeerJS), this project runs on a Raspberry Pi 4, leveraging peer-to-peer communication for station sync and client-side processing, with a server tracking the external world.
+A distributed starship simulator with modular stations—Nav, Eng,
+World, Sci, Ops, Config—for real-time crew interaction. Built
+with HTML5, WebSocket, and WebRTC (PeerJS), runs on a Pi 4 with
+P2P sync and client-side processing, server tracks the world.
 
 ## Features
 - Stations:
-  - Navigation: Set throttle (0-100%) and course (0-360°), calculate ship speed/course, monitor power output, view radar-filtered map.
-  - Engineering: Adjust power output (0-100%), monitor navigation inputs and ship speed.
-  - World: Server utility to manage the simulation universe, track objects, and broadcast filtered world state.
-  - Science: Configure radar settings (range, FOV, direction), monitor filtered world state on a map.
-- Real-Time Sync: Station states (throttle, course, power, radar config) sync via PeerJS P2P.
-- Distributed Processing: Clients calculate ship speed/course locally using P2P data, offloading computation from the server.
-- World Simulation: Server tracks ship position (x, y) and objects, broadcasting filtered state based on radar settings.
-- Local Persistence: Station states saved in localStorage for session continuity.
-- Reconnection Handling: WebSocket and PeerJS auto-reconnect on network drops.
-- Modular Design: `index.html` as launchpad redirects to station-specific pages (`nav.html`, `engineering.html`, `world.html`, `science.html`).
+  - Nav: Set throttle (0-100%), course (0-360°), view radar map
+  - Eng: Adjust power (0-100%), monitor Nav inputs and speed
+  - World: Manage sim universe, track objects, broadcast state
+  - Sci: Config radar (range, FOV, dir), monitor objects on map
+  - Ops: Allocate power to stations from Eng's total output
+  - Config: Manage station/ship configs via `stations.json`
+- Real-Time Sync: States sync via PeerJS P2P
+- Distributed: Clients calc speed/course locally with P2P data
+- World Sim: Server tracks position (x, y) and objects
+- Persistence: States in localStorage, auto-reload on updates
+- Reconnect: WebSocket/PeerJS auto-reconnect on drops
+- Modular: `index.html` redirects to station pages
 
 ## Prerequisites
-- Raspberry Pi 4 with Raspbian installed.
-- Node.js and npm for the WebSocket and HTTP server.
-- Git for cloning the repository.
+- Raspberry Pi 4 with Raspbian
+- Node.js/npm for WebSocket/HTTP server
+- Git for cloning repo
 
 ## Setup Instructions
-The easiest way to set up the project is to use the provided installation script, which automates the process.
+Easiest setup uses the install script to automate the process.
 
 ### Automated Installation (Recommended)
-1. Clone the repository to a temporary location:
+1. Clone repo to temp location:
    git clone https://github.com/maker-dave/starship-control-demo.git /tmp/starship-control-demo
    cd /tmp/starship-control-demo
-
-2. Run the installation script (located in the `tools/` directory):
+2. Run install script in `tools/`:
    chmod +x tools/install.sh
    ./tools/install.sh
-
-3. Access the Demo:
-   The script will install the project in `~/spaceship` and start the server. Access the demo at the URL provided by the script (e.g., `http://192.168.86.69:8126/index.html`).
-   Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
+3. Access Demo:
+   Script installs in `~/spaceship`, starts server. Use URL (e.g.,
+   `http://192.168.86.69:8126/index.html`). Claim stations on devices.
 
 ### Manual Installation (Alternative)
-If you prefer to set up the project manually:
-1. Clone the Repository:
+1. Clone Repo:
    git clone https://github.com/maker-dave/starship-control-demo.git ~/spaceship
    cd ~/spaceship
-
-2. Install Dependencies:
-   Install Node.js modules:
+2. Install Deps:
    npm init -y
-   npm install ws express
-
-3. Move HTML Files:
-   Create a `public/` directory and move the HTML files from `lib/`:
+   npm install ws express chokidar
+3. Move Files:
    mkdir public
    mv lib/*.html public/
-
-4. Start the Server:
-   Launch the WebSocket and HTTP server:
+   cp stations.json .
+4. Start Server:
    node server.js
-
-5. Access the Demo:
-   On four devices, open http://<pi-ip-address>:8126/index.html (e.g., http://192.168.86.69:8126/index.html) in a browser.
-   Claim "Navigation," "Engineering," "World," and "Science" on separate devices to start the simulation.
+5. Access Demo:
+   Open `http://<pi-ip>:8126/index.html` on devices, claim stations.
 
 ## Usage
-- Claim a Station: Select "Navigation," "Engineering," "World," or "Science" on `index.html` to redirect to the station interface.
-- Control the Ship:
-  - Navigation: Adjust throttle and course sliders, watch speed/course update based on Engineering’s power, view radar-filtered map.
-  - Engineering: Set power output, monitor Navigation’s inputs and resulting speed.
-  - World: Manage simulation objects (add, edit, delete), monitor all objects on a map.
-  - Science: Configure radar settings (range, FOV, direction), monitor detected objects on a map.
-- Monitor Status: Real-time updates reflect across stations via P2P.
-- Test Resilience: Disconnect or refresh to verify reconnection and state persistence.
+- Claim Station: Pick one on `index.html` to redirect
+- Control Ship:
+  - Nav: Adjust throttle/course, view radar
+  - Eng: Set power, monitor Nav
+  - World: Manage objects, monitor universe
+  - Sci: Config radar, monitor objects
+  - Ops: Allocate power to stations
+  - Config: Edit `stations.json`
+- Monitor: Real-time P2P updates
+- Test: Edit file/refresh to check auto-update
 
 ## Project Files
-- lib/index.html: Launchpad for station selection and redirection (HTML5, JavaScript, PeerJS).
-- lib/nav.html: Navigation station interface and logic.
-- lib/engineering.html: Engineering station interface and logic.
-- lib/world.html: World station interface and logic (server utility).
-- lib/science.html: Science station interface and logic.
-- lib/server.js: WebSocket server for signaling and Express for serving files (Node.js).
-- docs/revision_history.txt: Version history log.
-- README.md: This file (also available as README.txt).
-- tools/install.sh: Installation script for automated setup.
-- package.json: Added to ensure proper dependency installation.
+- lib/index.html: Launchpad (HTML5, JS, PeerJS)
+- lib/nav.html: Nav station
+- lib/engineering.html: Eng station
+- lib/world.html: World station (utility)
+- lib/science.html: Sci station
+- lib/ops.html: Ops station
+- lib/config.html: Config station
+- lib/server.js: WebSocket/Express server
+- stations.json: Station/ship config
+- docs/revision_history.txt: Version log
+- README.md: This file (also README.txt)
+- tools/install.sh: Install script
+- package.json: Dependency setup
 
 ## Requirements
-- Node.js: Version 18+ with `ws` and `express` modules.
-- Network: Devices on the same network as the Pi (e.g., Wi-Fi at 192.168.86.x).
-- Ports: 8126 open for WebSocket and HTTP (sudo ufw allow 8126).
+- Node.js: 18+ with `ws`, `express`, `chokidar`
+- Network: Devices on Pi network (e.g., 192.168.86.x)
+- Ports: 8126 open (sudo ufw allow 8126)
 
 ## Notes
-- Developed on a Raspberry Pi 4 with IP 192.168.86.69.
-- Uses Express (in `server.js`) to serve HTML files; no Apache required.
-  - Note: Early versions of this project (up to Version 0.7) used Apache 2 to serve HTML files, with `server.js` handling only WebSocket communication. Starting with Version 0.8, `server.js` was updated to use Express for serving files, consolidating HTTP and WebSocket on port 8126 and eliminating the need for Apache.
-- Navigation and Science stations receive world updates every 3 seconds, filtered by radar settings.
-- No external hosting needed; P2P handles station sync, server manages world state.
-- The `install.sh` script moves HTML files from `lib/` to `public/` during installation to match the expected structure for Express.
-- Changed server port to 8126 to avoid conflicts with commonly used ports (previously 8080, then 8123, then 8125). However, there are ongoing issues with `EADDRINUSE` errors, likely due to race conditions or lingering socket states on the Pi.
+- Dev on Pi 4, IP 192.168.86.69
+- Uses Express in `server.js`; no Apache
+  - Early versions (to 0.7) used Apache, now Express on 8126
+- Nav/Sci get world updates every 3s, radar-filtered
+- No external host; P2P sync, server for world state
+- `install.sh` moves HTML from `lib/` to `public/`, `stations.json` in root
+- Port 8126 avoids conflicts; `EADDRINUSE` may need manual fix
 
 ## Contributing
-Fork the repo, tweak the stations or add new ones, and submit a pull request—or open an issue with ideas! This is a maker-driven project—go wild with it.
+Fork, tweak stations, PR—or open an issue! Maker-driven—go wild.
 
 ## License
-None specified yet—open to suggestions!
+None yet—open to suggestions!
 
 ## Author
 - Maker Dave (cpusurgeon@gmail.com)
