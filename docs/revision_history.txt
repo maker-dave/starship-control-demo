@@ -129,3 +129,16 @@ Version 0.12 - Auto-Update and Dynamic Config (April 1, 2025)
   - Limited to five stations; Tactical and others still needed.
   - Untested: Auto-update and config changes need verification.
 - Status: Functional with auto-update and dynamic config; ready for testing and refinement.
+
+Version 0.13 - Dynamic Station Loading (April 1, 2025)
+- Description: Removed hardcoded stations from `index.html`, enabled immediate page loading without waiting for all stations to claim, and added dynamic PeerID updates post-load for flexible P2P connections.
+- Features:
+  - `index.html` Updated: Dynamically loads station list from `stations.json` via WebSocket, redirects immediately on claim without waiting for all stations.
+  - `server.js` Updated: Redirects on claim with available PeerIDs, broadcasts new PeerIDs to loaded stations via `{ type: 'peerUpdate', station, peerId }`.
+  - `nav.html`, `engineering.html`, `world.html`, `science.html`, `ops.html`, `config.html` Updated: Added `peerUpdate` handler to connect to new peers as they claim, supporting dynamic P2P connections after page load.
+- Issues:
+  - Map updates every 3 seconds still jumpy; needs interpolation.
+  - No radar sweep animation on client maps.
+  - Limited to six stations (Nav, Eng, World, Sci, Ops, Config); Tactical and others still needed.
+  - Untested: Dynamic station loading and PeerID updates need verification.
+- Status: Enhanced flexibility with dynamic station loading; ready for testing and further refinement.
