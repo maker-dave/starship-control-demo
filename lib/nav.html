@@ -37,7 +37,9 @@
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.86.69:8080');
+        const wsPort = window.location.port || '8126';
+        const wsHost = window.location.hostname || '192.168.86.69';
+        const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         const params = new URLSearchParams(window.location.search);
         const myPeerId = params.get('peerId');
         const targetPeerIds = params.get('targetPeerIds') ? params.get('targetPeerIds').split(',') : [];
@@ -52,6 +54,21 @@
 
         const canvas = document.getElementById('navMap');
         const ctx = canvas.getContext('2d');
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('connection-status').innerText = 'Connected';
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'nav.html') {
+                console.log('Nav page updated, reloading...');
+                localStorage.setItem('navState', JSON.stringify(localState));
+                location.reload();
+            }
+        };
 
         myPeer.on('open', () => {
             targetPeerIds.forEach(targetPeerId => {
@@ -117,13 +134,11 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw stars
             for (let i = 0; i < 100; i++) {
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
             }
 
-            // Draw objects (filtered by World station's radar)
             worldState.objects.forEach(obj => {
                 ctx.beginPath();
                 ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
@@ -131,9 +146,8 @@
                 ctx.fill();
             });
 
-            // Draw ship (always centered for Navigation)
             ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2); // Center on canvas
+            ctx.translate(canvas.width / 2, canvas.height / 2);
             ctx.rotate((worldState.ship.course + 90) * Math.PI / 180);
             ctx.beginPath();
             ctx.moveTo(0, -15);
