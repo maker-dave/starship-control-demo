@@ -19,7 +19,7 @@
     </div>
 
     <script>
-        const wsPort = window.location.port || '8126'; // Use current port or default to 8126
+        const wsPort = window.location.port || '8126';
         const wsHost = window.location.hostname || '192.168.86.69';
         const socket = new WebSocket(`ws://${wsHost}:${wsPort}`);
         let myPeer;
@@ -27,6 +27,17 @@
         socket.onopen = () => {
             console.log('WebSocket connected');
             document.getElementById('status').innerText = 'Connected - Select a station';
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+            if (data.type === 'page-update' && data.file === 'index.html') {
+                console.log('Index page updated, reloading...');
+                location.reload(); // No state to save yet
+            } else if (data.type === 'redirect') {
+                window.location.href = `${data.station}.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
+            }
         };
 
         function claimStation(station) {
@@ -37,13 +48,6 @@
                 document.getElementById('status').innerText = `Claiming ${station}...`;
             });
         }
-
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'redirect') {
-                window.location.href = `${data.station}.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
-            }
-        };
     </script>
 </body>
 </html>
