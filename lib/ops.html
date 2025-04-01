@@ -63,41 +63,51 @@
                 location.reload();
             } else if (data.type === 'redirect') {
                 window.location.href = `ops.html?peerId=${myPeer.id}&targetPeerIds=${data.targetPeerIds}`;
+            } else if (data.type === 'peerUpdate') {
+                if (!connections.has(data.peerId)) {
+                    const conn = myPeer.connect(data.peerId);
+                    connections.set(data.peerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Connected to new peer: ${data.peerId}`);
+                        conn.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
+                    });
+                    conn.on('data', handlePeerData);
+                }
             }
         };
 
         myPeer.on('open', () => {
             targetPeerIds.forEach(targetPeerId => {
-                const conn = myPeer.connect(targetPeerId);
-                connections.set(targetPeerId, conn);
-                conn.on('open', () => {
-                    document.getElementById('connection-status').innerText = 'Connected';
-                    conn.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
-                });
-                conn.on('data', (data) => {
-                    const parsed = JSON.parse(data);
-                    if (parsed.power) {
-                        totalPower = parsed.power;
-                        updateStatus();
-                    }
-                });
+                if (targetPeerId) {  // Ensure not empty
+                    const conn = myPeer.connect(targetPeerId);
+                    connections.set(targetPeerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Initial connection to: ${targetPeerId}`);
+                        document.getElementById('connection-status').innerText = 'Connected';
+                        conn.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
+                    });
+                    conn.on('data', handlePeerData);
+                }
             });
         });
 
         myPeer.on('connection', (connection) => {
             connections.set(connection.peer, connection);
             connection.on('open', () => {
+                console.log(`New incoming connection from: ${connection.peer}`);
                 document.getElementById('connection-status').innerText = 'Connected';
                 connection.send(JSON.stringify({ type: 'powerAlloc', allocations: localState }));
             });
-            connection.on('data', (data) => {
-                const parsed = JSON.parse(data);
-                if (parsed.power) {
-                    totalPower = parsed.power;
-                    updateStatus();
-                }
-            });
+            connection.on('data', handlePeerData);
         });
+
+        function handlePeerData(data) {
+            const parsed = JSON.parse(data);
+            if (parsed.power) {
+                totalPower = parsed.power;
+                updateStatus();
+            }
+        }
 
         function updateAllocations() {
             const navPower = parseInt(document.getElementById('navPower').value);
@@ -105,7 +115,6 @@
             const engPower = parseInt(document.getElementById('engPower').value);
             const totalAllocated = navPower + sciencePower + engPower;
 
-            // Enforce total power limit
             if (totalAllocated > totalPower) {
                 const scale = totalPower / totalAllocated;
                 localState.navPower = Math.round(navPower * scale);
@@ -135,7 +144,6 @@
             document.getElementById('allocatedPower').innerText = totalAllocated;
         }
 
-        // Initial setup
         document.getElementById('navPower').value = localState.navPower;
         document.getElementById('sciencePower').value = localState.sciencePower;
         document.getElementById('engPower').value = localState.engPower;
