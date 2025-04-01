@@ -82,7 +82,7 @@ fi
 # Check if lib/ directory exists and move files
 if [ -d "$PROJECT_DIR/lib" ]; then
     # Move HTML files to public/
-    HTML_FILES=("index.html" "nav.html" "engineering.html" "world.html" "science.html")
+    HTML_FILES=("index.html" "nav.html" "engineering.html" "world.html" "science.html" "config.html" "ops.html")
     for file in "${HTML_FILES[@]}"; do
         if [ -f "$PROJECT_DIR/lib/$file" ]; then
             mv "$PROJECT_DIR/lib/$file" "$PROJECT_DIR/public/$file"
@@ -107,7 +107,7 @@ fi
 
 # Step 6: Verify required files
 echo "Verifying required files..."
-REQUIRED_FILES=("server.js" "public/index.html" "public/nav.html" "public/engineering.html" "public/world.html" "public/science.html")
+REQUIRED_FILES=("server.js" "public/index.html" "public/nav.html" "public/engineering.html" "public/world.html" "public/science.html" "public/config.html" "public/ops.html")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "$PROJECT_DIR/$file" ]; then
         echo "Error: $file not found in $PROJECT_DIR. Installation cannot proceed."
@@ -168,7 +168,6 @@ until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
         if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
             echo "Retrying in 5 seconds..."
             sleep 5
-            # Check port again in case it was taken
             if sudo lsof -i :$PORT > /dev/null || ss -tuln | grep ":$PORT" > /dev/null; then
                 echo "Port $PORT is in use again. Freeing it..."
                 sudo fuser -k $PORT/tcp || {
