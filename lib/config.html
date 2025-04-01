@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server Configuration</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { background: #111; color: #fff; font-family: Arial; }
+        .panel { text-align: center; padding: 20px; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid #555; padding: 5px; }
+        th { background: #333; }
+        tr { background: #222; }
+        .form-section { margin: 20px; }
+        input, button { margin: 5px; padding: 5px; }
+        #status { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>Server Configuration</h1>
+        
+        <div class="form-section">
+            <h2>Stations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>HTML File</th>
+                        <th>Ship ID</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="stationTable"></tbody>
+            </table>
+            <input type="text" id="stationName" placeholder="Station Name">
+            <input type="text" id="htmlFile" placeholder="HTML File">
+            <input type="text" id="shipId" placeholder="Ship ID">
+            <button onclick="addOrEditStation()">Add/Edit Station</button>
+        </div>
+
+        <div class="form-section">
+            <h2>Ships</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Max Power</th>
+                        <th>Radar Range</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="shipTable"></tbody>
+            </table>
+            <input type="text" id="shipIdInput" placeholder="Ship ID">
+            <input type="text" id="shipName" placeholder="Ship Name">
+            <input type="number" id="maxPower" placeholder="Max Power" min="0">
+            <input type="number" id="radarRange" placeholder="Radar Range" min="0">
+            <button onclick="addOrEditShip()">Add/Edit Ship</button>
+        </div>
+
+        <button onclick="saveConfig()">Save Configuration</button>
+        <div id="status">Connecting...</div>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://192.168.86.69:8126');
+        const params = new URLSearchParams(window.location.search);
+        const myPeerId = params.get('peerId') || 'config';
+        let config = { stations: [], ships: [] };
+        let editingStationIdx = -1;
+        let editingShipIdx = -1;
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
+            document.getElementById('status').innerText = 'Connected';
+            socket.send(JSON.stringify({ type: 'claim', station: 'config', peerId: myPeerId }));
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'config') {
+                config = data.config || { stations: [], ships: [] };
+                updateTables();
+            }
+        };
+
+        function updateTables() {
+            const stationTable = document.getElementById('stationTable');
+            stationTable.innerHTML = '';
+            config.stations.forEach((station, idx) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${station.name}</td>
+                    <td>${station.htmlFile}</td>
+                    <td>${station.shipId || ''}</td>
+                    <td>
+                        <button onclick="editStation(${idx})">Edit</button>
+                        <button onclick="deleteStation(${idx})">Delete</button>
+                    </td>
+                `;
+                stationTable.appendChild(row);
+            });
+
+            const shipTable = document.getElementById('shipTable');
+            shipTable.innerHTML = '';
+            config.ships.forEach((ship, idx) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ship.id}</td>
+                    <td>${ship.name}</td>
+                    <td>${ship.maxPower}</td>
+                    <td>${ship.radarRange}</td>
+                    <td>
+                        <button onclick="editShip(${idx})">Edit</button>
+                        <button onclick="deleteShip(${idx})">Delete</button>
+                    </td>
+                `;
+                shipTable.appendChild(row);
+            });
+        }
+
+        function addOrEditStation() {
+            const name = document.getElementById('stationName').value.trim();
+            const htmlFile = document.getElementById('htmlFile').value.trim();
+            const shipId = document.getElementById('shipId').value.trim();
+            if (!name || !htmlFile) return;
+
+            if (editingStationIdx >= 0) {
+                config.stations[editingStationIdx] = { name, htmlFile, shipId };
+                editingStationIdx = -1;
+            } else {
+                config.stations.push({ name, htmlFile, shipId });
+            }
+
+            document.getElementById('stationName').value = '';
+            document.getElementById('htmlFile').value = '';
+            document.getElementById('shipId').value = '';
+            updateTables();
+        }
+
+        function editStation(idx) {
+            const station = config.stations[idx];
+            document.getElementById('stationName').value = station.name;
+            document.getElementById('htmlFile').value = station.htmlFile;
+            document.getElementById('shipId').value = station.shipId || '';
+            editingStationIdx = idx;
+        }
+
+        function deleteStation(idx) {
+            config.stations.splice(idx, 1);
+            updateTables();
+        }
+
+        function addOrEditShip() {
+            const id = document.getElementById('shipIdInput').value.trim();
+            const name = document.getElementById('shipName').value.trim();
+            const maxPower = parseInt(document.getElementById('maxPower').value) || 0;
+            const radarRange = parseInt(document.getElementById('radarRange').value) || 0;
+            if (!id || !name) return;
+
+            if (editingShipIdx >= 0) {
+                config.ships[editingShipIdx] = { id, name, maxPower, radarRange };
+                editingShipIdx = -1;
+            } else {
+                config.ships.push({ id, name, maxPower, radarRange });
+            }
+
+            document.getElementById('shipIdInput').value = '';
+            document.getElementById('shipName').value = '';
+            document.getElementById('maxPower').value = '';
+            document.getElementById('radarRange').value = '';
+            updateTables();
+        }
+
+        function editShip(idx) {
+            const ship = config.ships[idx];
+            document.getElementById('shipIdInput').value = ship.id;
+            document.getElementById('shipName').value = ship.name;
+            document.getElementById('maxPower').value = ship.maxPower;
+            document.getElementById('radarRange').value = ship.radarRange;
+            editingShipIdx = idx;
+        }
+
+        function deleteShip(idx) {
+            config.ships.splice(idx, 1);
+            updateTables();
+        }
+
+        function saveConfig() {
+            socket.send(JSON.stringify({ type: 'config-update', config: config }));
+            document.getElementById('status').innerText = 'Configuration Saved';
+        }
+    </script>
+</body>
+</html>
