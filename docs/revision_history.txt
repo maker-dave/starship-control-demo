@@ -113,3 +113,19 @@ Version 0.11 - Port Changes and Installation Fixes (March 30, 2025)
   - Limited to four stations; more bridge roles (e.g., Tactical, Ops) needed for a full crew.
   - Persistent `EADDRINUSE` errors on port 8123 (despite script using 8126), likely due to a mismatch in `server.js` (still set to 8123) or race conditions/lingering socket states on the Pi. To be resolved in the next session.
 - Status: Added `package.json` to fix dependency installation; port conflict issues persist and need further investigation (likely a race condition or socket state issue); will continue troubleshooting tomorrow.
+
+Version 0.12 - Auto-Update and Dynamic Config (April 1, 2025)
+- Description: Implemented auto-update for client pages and dynamic station configuration, adding a new Ops station and resolving port mismatches.
+- Features:
+  - `server.js` Updated: Added `chokidar` to watch `./public/*.html` for auto-updates, sends `{ type: 'page-update', file: '...' }` to clients. Now loads/watches `stations.json` for dynamic station pairing by `shipId`, handles config updates from `config.html`.
+  - `index.html`, `nav.html`, `engineering.html`, `world.html`, `science.html` Updated: Fixed WebSocket port to 8126, added auto-update listener to reload on `page-update`, preserving state via `localStorage` where applicable.
+  - `ops.html` Added: Operations station for power allocation, controls power distribution to Nav, Science, Eng via P2P, saves state in `localStorage`, supports auto-update.
+  - `config.html` Added: UI to manage `stations.json`, editing stations (name, htmlFile, shipId) and ships (id, name, maxPower, radarRange), sends updates to `server.js`.
+  - `stations.json` Added: Initial config with all stations (including ops) and one ship ("enterprise").
+  - `install.sh` Updated: Moves and verifies `config.html` and `ops.html` alongside other HTML files.
+- Issues:
+  - Map updates every 3 seconds still jumpy; needs interpolation.
+  - No radar sweep animation on client maps.
+  - Limited to five stations; Tactical and others still needed.
+  - Untested: Auto-update and config changes need verification.
+- Status: Functional with auto-update and dynamic config; ready for testing and refinement.
