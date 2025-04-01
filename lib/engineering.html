@@ -43,39 +43,50 @@
                 console.log('Engineering page updated, reloading...');
                 localStorage.setItem('engState', JSON.stringify(localState));
                 location.reload();
+            } else if (data.type === 'peerUpdate') {
+                if (!connections.has(data.peerId)) {
+                    const conn = myPeer.connect(data.peerId);
+                    connections.set(data.peerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Connected to new peer: ${data.peerId}`);
+                        conn.send(JSON.stringify(localState));
+                    });
+                    conn.on('data', handlePeerData);
+                }
             }
         };
 
         myPeer.on('open', () => {
             targetPeerIds.forEach(targetPeerId => {
-                const conn = myPeer.connect(targetPeerId);
-                connections.set(targetPeerId, conn);
-                conn.on('open', () => {
-                    document.getElementById('connection-status').innerText = 'Connected';
-                    conn.send(JSON.stringify(localState));
-                });
-                conn.on('data', (data) => {
-                    const parsed = JSON.parse(data);
-                    if (parsed.throttle) remoteState.throttle = parsed.throttle;
-                    if (parsed.course) remoteState.course = parsed.course;
-                    calculateShipState();
-                });
+                if (targetPeerId) {  // Ensure not empty
+                    const conn = myPeer.connect(targetPeerId);
+                    connections.set(targetPeerId, conn);
+                    conn.on('open', () => {
+                        console.log(`Initial connection to: ${targetPeerId}`);
+                        document.getElementById('connection-status').innerText = 'Connected';
+                        conn.send(JSON.stringify(localState));
+                    });
+                    conn.on('data', handlePeerData);
+                }
             });
         });
 
         myPeer.on('connection', (connection) => {
             connections.set(connection.peer, connection);
             connection.on('open', () => {
+                console.log(`New incoming connection from: ${connection.peer}`);
                 document.getElementById('connection-status').innerText = 'Connected';
                 connection.send(JSON.stringify(localState));
             });
-            connection.on('data', (data) => {
-                const parsed = JSON.parse(data);
-                if (parsed.throttle) remoteState.throttle = parsed.throttle;
-                if (parsed.course) remoteState.course = parsed.course;
-                calculateShipState();
-            });
+            connection.on('data', handlePeerData);
         });
+
+        function handlePeerData(data) {
+            const parsed = JSON.parse(data);
+            if (parsed.throttle) remoteState.throttle = parsed.throttle;
+            if (parsed.course) remoteState.course = parsed.course;
+            calculateShipState();
+        }
 
         function updateState() {
             localState.power = parseInt(document.getElementById('power').value);
