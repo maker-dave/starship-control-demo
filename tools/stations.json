@@ -1,0 +1,12 @@
+{
+    "stations": [
+        {"name": "navigation", "htmlFile": "nav.html", "shipId": "enterprise"},
+        {"name": "engineering", "htmlFile": "engineering.html", "shipId": "enterprise"},
+        {"name": "world", "htmlFile": "world.html", "shipId": "enterprise"},
+        {"name": "science", "htmlFile": "science.html", "shipId": "enterprise"},
+        {"name": "config", "htmlFile": "config.html", "shipId": ""}
+    ],
+    "ships": [
+        {"id": "enterprise", "name": "Enterprise", "maxPower": 1000, "radarRange": 600}
+    ]
+}
