@@ -13,12 +13,12 @@ P2P sync and client-side processing, server tracks the world.
   - Sci: Config radar (range, FOV, dir), monitor objects on map
   - Ops: Allocate power to stations from Eng's total output
   - Config: Manage station/ship configs via `stations.json`
-- Real-Time Sync: States sync via PeerJS P2P
+- Real-Time Sync: States sync via PeerJS P2P, dynamic peer adds
 - Distributed: Clients calc speed/course locally with P2P data
 - World Sim: Server tracks position (x, y) and objects
 - Persistence: States in localStorage, auto-reload on updates
 - Reconnect: WebSocket/PeerJS auto-reconnect on drops
-- Modular: `index.html` redirects to station pages
+- Modular: `index.html` redirects dynamically from stations.json
 
 ## Prerequisites
 - Raspberry Pi 4 with Raspbian
@@ -64,7 +64,7 @@ Easiest setup uses the install script to automate the process.
   - Sci: Config radar, monitor objects
   - Ops: Allocate power to stations
   - Config: Edit `stations.json`
-- Monitor: Real-time P2P updates
+- Monitor: Real-time P2P updates, peers added dynamically
 - Test: Edit file/refresh to check auto-update
 
 ## Project Files
