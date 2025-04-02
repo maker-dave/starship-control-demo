@@ -82,7 +82,7 @@ fi
 # Check if lib/ directory exists and move files
 if [ -d "$PROJECT_DIR/lib" ]; then
     # Move HTML files to public/
-    HTML_FILES=("index.html" "nav.html" "engineering.html" "world.html" "science.html" "config.html" "ops.html")
+    HTML_FILES=("index.html" "navigation.html" "engineering.html" "world.html" "science.html" "config.html" "ops.html")
     for file in "${HTML_FILES[@]}"; do
         if [ -f "$PROJECT_DIR/lib/$file" ]; then
             mv "$PROJECT_DIR/lib/$file" "$PROJECT_DIR/public/$file"
@@ -116,7 +116,7 @@ fi
 
 # Step 6: Verify required files
 echo "Verifying required files..."
-REQUIRED_FILES=("server.js" "stations.json" "public/index.html" "public/nav.html" "public/engineering.html" "public/world.html" "public/science.html" "public/config.html" "public/ops.html")
+REQUIRED_FILES=("server.js" "stations.json" "public/index.html" "public/navigation.html" "public/engineering.html" "public/world.html" "public/science.html" "public/config.html" "public/ops.html")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "$PROJECT_DIR/$file" ]; then
         echo "Error: $file not found in $PROJECT_DIR. Installation cannot proceed."
