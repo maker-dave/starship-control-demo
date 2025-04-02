@@ -127,3 +127,11 @@ Done InProg Ignor Task
                         Federation, Klingon, Babylon 5, Valkyrie, Battlestar
                         Galactica).
 [ ]  [ ]    [ ]     - Load overlay based on shipId from stations.json.
+
+[x]  [ ]    [ ]   17. Enable Dynamic Station Loading and Peer Updates
+[x]  [ ]    [ ]     - Remove hardcoded stations from index.html, load from
+                        stations.json.
+[x]  [ ]    [ ]     - Allow pages to load without all stations claimed, send
+                        PeerIDs post-load.
+[x]  [ ]    [ ]     - Update station files to handle dynamic PeerID updates via
+                        WebSocket.
