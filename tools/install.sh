@@ -100,6 +100,15 @@ if [ -d "$PROJECT_DIR/lib" ]; then
         echo "Error: server.js not found in $PROJECT_DIR/lib/. Installation cannot proceed."
         exit 1
     fi
+
+    # Copy stations.json to root
+    if [ -f "$PROJECT_DIR/tools/stations.json" ]; then
+        cp "$PROJECT_DIR/tools/stations.json" "$PROJECT_DIR/stations.json"
+        echo "Copied stations.json to $PROJECT_DIR"
+    else
+        echo "Error: stations.json not found in $PROJECT_DIR/tools/. Installation cannot proceed."
+        exit 1
+    fi
 else
     echo "Error: $PROJECT_DIR/lib/ directory not found. Ensure the repository includes a lib/ directory with HTML files and server.js."
     exit 1
@@ -107,7 +116,7 @@ fi
 
 # Step 6: Verify required files
 echo "Verifying required files..."
-REQUIRED_FILES=("server.js" "public/index.html" "public/nav.html" "public/engineering.html" "public/world.html" "public/science.html" "public/config.html" "public/ops.html")
+REQUIRED_FILES=("server.js" "stations.json" "public/index.html" "public/nav.html" "public/engineering.html" "public/world.html" "public/science.html" "public/config.html" "public/ops.html")
 for file in "${REQUIRED_FILES[@]}"; do
     if [ ! -f "$PROJECT_DIR/$file" ]; then
         echo "Error: $file not found in $PROJECT_DIR. Installation cannot proceed."
