@@ -63,7 +63,7 @@
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             console.log('Received:', data);
-            if (data.type === 'page-update' && data.file === 'nav.html') {
+            if (data.type === 'page-update' && data.file === 'navigation.html') {
                 console.log('Nav page updated, reloading...');
                 localStorage.setItem('navState', JSON.stringify(localState));
                 location.reload();
@@ -147,11 +147,6 @@
         function drawMap() {
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = 0; i < 100; i++) {
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
-            }
 
             worldState.objects.forEach(obj => {
                 ctx.beginPath();
